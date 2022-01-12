@@ -2,23 +2,21 @@ from pyteal import *
 
 globals().update(TealType.__members__)
 
-def intvar():
-    return ScratchVar(uint64)
-
 @Subroutine(uint64)
 def g(x):
     return Int(3)
 
-@Subroutine(uint64)
+@Subroutine(TealType.none)
 def f(n):
-    s = intvar()
-    return Seq([s.store(g(n)),
-    Return(Int(1))])
+    s = ScratchVar(TealType.uint64)
+    s.store(g(n))
 
 @Subroutine(uint64)
 def teal():
-    retval = intvar()
-    return Seq([retval.store(f(Int(30))),
+    x = ScratchVar(TealType.uint64)
+    retval = ScratchVar(TealType.uint64)
+    return Seq([x.store(f(Int(30))),
+    retval.store(Int(100)),
     Return(retval.load())])
 
 if __name__ == "__main__":

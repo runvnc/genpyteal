@@ -3,6 +3,8 @@
 import json
 from redbaron import RedBaron
 import sys
+import traceback
+import sys
 
 def catchdump(x):
   try:    
@@ -12,11 +14,14 @@ def catchdump(x):
 
 def hasMultiStmt(node):
   l =[]
-  for nd in node:
-    nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
-    nodes = nodes.filter(lambda x: x != None)
-    l.extend(nodes)
-  return len(l) > 1
+  try:
+    for nd in node:
+      nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+      nodes = nodes.filter(lambda x: x != None)
+      l.extend(nodes)
+    return len(l) > 1
+  except:
+    pass
 
 def getScratch(red):
   s = red.find_all('assign')
@@ -69,7 +74,8 @@ def all(red):
       strlist = ',\n'.join(strs_)
       red.value = f"{scratch}\nreturn Seq([{strlist}])\n"    
   except BaseException as err:
-    print(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(traceback.format_exc())
     pass  
 
 def bools(boolOp):
@@ -82,14 +88,15 @@ def assigns(asn):
     return
   all(asn.value)
   makescratch = ''
-  is_str = "'" in asn.value or '"' in asn.value
+  is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
   if not hasScratch(asn, asn.target.value):
     if is_str:
       typ = 'TealType.bytes'
     else:
       typ = 'TealType.uint64'
     makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
-  asn.replace(f"{makescratch}{asn.target.value}.store({asn.value.dumps()})")
+    asn.insert_before(makescratch)
+  asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def ifs(if_):
   all(if_.value)
