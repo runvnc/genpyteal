@@ -4,56 +4,73 @@ import json
 from redbaron import RedBaron
 import sys
 
-NL = "\n"
-
 def catchdump(x):
   try:    
     return x.dumps()      
   except:
     pass  
 
-def convertAll(red):
+def hasMultiStmt(node):
+  l =[]
+  for nd in node:
+    nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+    nodes = nodes.filter(lambda x: x != None)
+    l.extend(nodes)
+  return len(l) > 1
+
+def getScratch(red):
+    s = red.find_all('assign')
+    if isinstance(s, list):
+      s = s.filter(lambda x: 'ScratchVar' in x)
+    if s:
+      return '\n'.join(s.map(lambda x: x.dumps()))
+    else:
+      return ''
+
+def all(red):
   try: 
     bools = red.find_all('boolean_operator')
-    bools.map(convertBool)
+    bools.map(bools)
     ifs = red.find_all('ifelseblock')
-    ifs.map(convertIfs)
-    
+    ifs.map(ifs)    
     strs_ = []
-    cnt = 0 
+    cnt = 0
+    hasMulti = hasMultiStmt(red)
+    scratch = getScratch(red)
     for nd in red:
       cnt += 1
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
-      rets = nodes.find_all('return')
-      rets.map(convertReturn)  
+      if hasMulti:
+        rets = nodes.find_all('return')
+        rets.map(returns)  
       strs = nodes.map(catchdump)
       strs = strs.filter(lambda x: x != None)
       strs_.extend(strs)
     if len(strs_) > 1:
       strlist = ',\n'.join(strs_)
-      red.value = f"return Seq([{strlist}]){NL}"    
+      red.value = f"{scratch}\nreturn Seq([{strlist}])\n"    
   except BaseException as err:
     print(f"Unexpected {err=}, {type(err)=}")  
     pass
 
-def convertBool(boolOp):
-  convertAll(boolOp.first)
-  convertAll(boolOp.second)
+def bools(boolOp):
+  all(boolOp.first)
+  all(boolOp.second)
   boolOp.parent.value = f"{boolOp.value.title()}({boolOp.first}, {boolOp.second})"
 
-def convertIfs(if_):
-  convertAll(if_.value)
+def ifs(if_):
+  all(if_.value)
   if_.value = f"If({if_.value[0].test.dumps()}, {if_.value[0].value.dumps()})\n\n"
 
-def convertReturn(ret):
-  convertAll(ret.value)
+def returns(ret):
+  all(ret.value)
   ret.replace(f"Return({ret.value.dumps().replace('return ','')})")
 
 def convert(fname):
   source = open(fname, "r")
   red = RedBaron(source.read())
   fundefs = red.find_all('def')
-  fundefs.map(convertAll)
+  fundefs.map(all)
   print("from pyteal import *\n")
   print(red.dumps())
   print('if __name__ == "__main__":\n    print(compileTeal(teal(), mode=Mode.Application, version=5))')

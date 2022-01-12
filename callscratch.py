@@ -1,5 +1,3 @@
-from pyteal import *
-
 @Subroutine(TealType.uint64)
 def g(x):
     return Int(3)
@@ -15,6 +13,3 @@ def teal():
     retval = ScratchVar(TealType.uint64)
     retval.store(f(Int(30)))
     return retval.load()
-
-if __name__ == "__main__":
-    print(compileTeal(teal(), mode=Mode.Application, version=5))
