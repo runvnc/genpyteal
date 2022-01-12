@@ -1,15 +1,23 @@
-@Subroutine(TealType.uint64)
+def int(x):
+    return x
+
+# ii.parent.replace(ii.parent.dumps().replace('@int','@Subroutine(uint64)'))
+    
+def intvar():
+    return ScratchVar(uint64)
+
+@int
 def g(x):
-    return Int(3)
+    return 3
 
-@Subroutine(TealType.uint64)
+@Subroutine(uint64)
 def f(n):
-    s = ScratchVar(TealType.uint64)
+    s = intvar()
     s.store(g(n))
-    return Int(1)
+    return 1
 
-@Subroutine(TealType.uint64)
+@Subroutine(uint64)
 def teal():
-    retval = ScratchVar(TealType.uint64)
-    retval.store(f(Int(30)))
+    retval = intvar()
+    retval.store(f(30))
     return retval.load()

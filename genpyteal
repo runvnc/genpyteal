@@ -27,22 +27,23 @@ def getScratch(red):
     else:
       return ''
 
+def findmap(red, which, how):
+    l = red.find_all(which)
+    l.map(how)
+
 def all(red):
   try: 
-    bools = red.find_all('boolean_operator')
-    bools.map(bools)
-    ifs = red.find_all('ifelseblock')
-    ifs.map(ifs)    
+    findmap(red, 'boolean_operator', bools)
+    findmap(red, 'int', ints)
+    findmap(red, 'ifelseblock', ifs)    
     strs_ = []
-    cnt = 0
     hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
     for nd in red:
-      cnt += 1
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
       if hasMulti:
-        rets = nodes.find_all('return')
-        rets.map(returns)  
+        findmap(nodes, 'return', returns)
+        
       strs = nodes.map(catchdump)
       strs = strs.filter(lambda x: x != None)
       strs_.extend(strs)
@@ -66,12 +67,20 @@ def returns(ret):
   all(ret.value)
   ret.replace(f"Return({ret.value.dumps().replace('return ','')})")
 
+def ints(i):
+  try:
+    if i.parent.parent.parent.value[0].value == 'Int':
+      return
+  except:
+    pass
+  i.replace(f"Int({i.value})")
+
 def convert(fname):
   source = open(fname, "r")
   red = RedBaron(source.read())
-  fundefs = red.find_all('def')
-  fundefs.map(all)
+  findmap(red, 'def', all)  
   print("from pyteal import *\n")
+  print("globals().update(TealType.__members__)")
   print(red.dumps())
   print('if __name__ == "__main__":\n    print(compileTeal(teal(), mode=Mode.Application, version=5))')
 
