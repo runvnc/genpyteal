@@ -32,10 +32,17 @@ def findmap(red, which, how):
     l.map(how)
 
 def all(red):
-  try: 
+  try:
+    if red.type == 'def':
+      if len(red.decorators) == 0:
+        if 'return' in red.dumps():
+          red.decorators.append("@Subroutine(uint64)")
+        else:
+          red.decorators.append("@Subroutine(TealType.none)")
     findmap(red, 'boolean_operator', bools)
     findmap(red, 'int', ints)
-    findmap(red, 'ifelseblock', ifs)    
+    findmap(red, 'ifelseblock', ifs)
+    findmap(red, 'assign', assigns)
     strs_ = []
     hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
@@ -58,6 +65,10 @@ def bools(boolOp):
   all(boolOp.first)
   all(boolOp.second)
   boolOp.parent.value = f"{boolOp.value.title()}({boolOp.first}, {boolOp.second})"
+
+def assigns(asn):
+  all(asn.value)
+  asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def ifs(if_):
   all(if_.value)
