@@ -18,19 +18,22 @@ def convertAll(red):
     bools.map(convertBool)
     ifs = red.find_all('ifelseblock')
     ifs.map(convertIfs)
+    
     strs_ = []
     cnt = 0 
     for nd in red:
       cnt += 1
-      nodes = nd.find_all(['ifelseblock','atomtrailers'], recursive=False)
+      nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+      rets = nodes.find_all('return')
+      rets.map(convertReturn)  
       strs = nodes.map(catchdump)
       strs = strs.filter(lambda x: x != None)
       strs_.extend(strs)
     if len(strs_) > 1:
       strlist = ',\n'.join(strs_)
-      red.value = f"Seq([{strlist}]){NL}"    
+      red.value = f"return Seq([{strlist}]){NL}"    
   except BaseException as err:
-    #print(f"Unexpected {err=}, {type(err)=}")  
+    print(f"Unexpected {err=}, {type(err)=}")  
     pass
 
 def convertBool(boolOp):
@@ -42,14 +45,18 @@ def convertIfs(if_):
   convertAll(if_.value)
   if_.value = f"If({if_.value[0].test.dumps()}, {if_.value[0].value.dumps()})\n\n"
 
+def convertReturn(ret):
+  convertAll(ret.value)
+  ret.replace(f"Return({ret.value.dumps().replace('return ','')})")
+
 def convert(fname):
   source = open(fname, "r")
-  red = RedBaron(source.read())  
+  red = RedBaron(source.read())
   fundefs = red.find_all('def')
   fundefs.map(convertAll)
   print("from pyteal import *\n")
   print(red.dumps())
-  print('if __name__ == "__main__":\n    print(compileTeal(teal(), mode=Mode.Signature, version=2))')
+  print('if __name__ == "__main__":\n    print(compileTeal(teal(), mode=Mode.Application, version=5))')
 
 convert(sys.argv[1])
 
