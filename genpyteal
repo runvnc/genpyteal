@@ -19,17 +19,28 @@ def hasMultiStmt(node):
   return len(l) > 1
 
 def getScratch(red):
-    s = red.find_all('assign')
-    if isinstance(s, list):
-      s = s.filter(lambda x: 'ScratchVar' in x)
-    if s:
-      return '\n'.join(s.map(lambda x: x.dumps()))
+  s = red.find_all('assign')
+  if isinstance(s, list):
+    s = s.filter(lambda x: 'ScratchVar' in x)
+  if s:
+    return '\n'.join(s.map(lambda x: x.dumps()))
+  else:
+    return ''
+
+def hasScratch(red, varname):
+  s = red.root.find_all('assign')
+  if isinstance(s, list):
+    s = s.filter(lambda x: 'ScratchVar' in x)
+    s = s.filter(lambda x: x.name == varname)
+    if not s:
+      return False
     else:
-      return ''
+      return True
+  return False       
 
 def findmap(red, which, how):
-    l = red.find_all(which)
-    l.map(how)
+  l = red.find_all(which)
+  l.map(how)
 
 def all(red):
   try:
@@ -59,7 +70,7 @@ def all(red):
       red.value = f"{scratch}\nreturn Seq([{strlist}])\n"    
   except BaseException as err:
     print(f"Unexpected {err=}, {type(err)=}")  
-    pass
+    pass  
 
 def bools(boolOp):
   all(boolOp.first)
@@ -67,8 +78,18 @@ def bools(boolOp):
   boolOp.parent.value = f"{boolOp.value.title()}({boolOp.first}, {boolOp.second})"
 
 def assigns(asn):
+  if 'ScratchVar' in asn.value.dumps():
+    return
   all(asn.value)
-  asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
+  makescratch = ''
+  is_str = "'" in asn.value or '"' in asn.value
+  if not hasScratch(asn, asn.target.value):
+    if is_str:
+      typ = 'TealType.bytes'
+    else:
+      typ = 'TealType.uint64'
+    makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
+  asn.replace(f"{makescratch}{asn.target.value}.store({asn.value.dumps()})")
 
 def ifs(if_):
   all(if_.value)
