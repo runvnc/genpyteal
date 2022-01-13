@@ -112,8 +112,8 @@ def calls(nd):
   try:
     if nd.type != 'call':
       return
-    if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:
-      nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent.dumps().replace('Begin()','Begin').replace('Submit()','Submit')}")
+    if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:          
+      nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent[0].dumps()}")
   except:
     pass
   
