@@ -58,10 +58,10 @@ def all(red):
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
+      findmap(red, 'assign', assigns)
       findmap(red, 'boolean_operator', bools)
       findmap(red, 'int', ints)
       findmap(red, 'string', strings)
-      findmap(red, 'assign', assigns)
       findmap(red, 'ifelseblock', ifs)
       findmap(red, 'call', calls)
       findmap(red, 'name', names)
@@ -70,14 +70,17 @@ def all(red):
     scratch = getScratch(red)
     if hasattr(red,'type') and red.type == 'name':
       return
-    for nd in red:
-      nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
-      if hasMulti:
-        findmap(nodes, 'return', returns)
-        
-      strs = nodes.map(catchdump)
-      strs = strs.filter(lambda x: x != None)
-      strs_.extend(strs)
+    try:
+      for nd in red:
+        nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+        if hasMulti:
+          findmap(nodes, 'return', returns)
+          
+        strs = nodes.map(catchdump)
+        strs = strs.filter(lambda x: x != None)
+        strs_.extend(strs)
+    except:
+      pass
     if len(strs_) > 1:
       strlist = ',\n'.join(strs_)
       red.value = f"{scratch}\nreturn Seq([\n{strlist}])\n"    
@@ -91,13 +94,35 @@ def bools(boolOp):
   all(boolOp.second)
   boolOp.parent.value = f"{boolOp.value.title()}({boolOp.first}, {boolOp.second})"
 
-def assigns(asn):
+def assigns(asn):  
   if 'ScratchVar' in asn.value.dumps():
     return
-  if hasattr(asn.parent.value, 'type'):
-    if asn.parent.value.type == 'boolean' or asn.parent.value.type == 'comparison':
+  if hasattr(asn, 'asnChecked'):
+    print('checked already, ', asn.dumps())
+    return
+  else:
+    print('not checked already', asn.dumps())
+  parval = asn.value
+  asn.asnChecked = True
+  if hasattr(parval, 'filtered'):
+    parval = parval.filtered()[0]
+  safetycond = 'safety_cond' in asn.dumps()
+  if safetycond:
+    print(1)
+  if hasattr(parval, 'type'):  
+    if safetycond:
+      print(2)
+    if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
-  all(asn.value)
+    else:
+      if safetycond:
+        print(' | | | Parval type not bool or compare')
+        print(parval.type)
+        print(parval.help())
+  else:
+    print(' > > > Parent value does not have type attr: asn.value=',asn.value.dumps())
+    print(parval.help())    
+    print(' ')
   makescratch = ''
   is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
   if not hasScratch(asn, asn.target.value):
