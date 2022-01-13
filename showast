@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "from redbaron import RedBaron;red=RedBaron(open(\"$1\",\"r\").read()); red.help()" | ipython --no-banner --no-confirm-exit

@@ -82,8 +82,8 @@ def all(red):
     except:
       pass
     if len(strs_) > 1:
-      strlist = ',\n'.join(strs_)
-      red.value = f"{scratch}\nreturn Seq([\n{strlist}])\n"    
+      strlist = ',\n\t'.join(strs_)
+      red.value = f"{scratch}\nreturn Seq([\n\t{strlist}])\n"    
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -98,31 +98,15 @@ def assigns(asn):
   if 'ScratchVar' in asn.value.dumps():
     return
   if hasattr(asn, 'asnChecked'):
-    print('checked already, ', asn.dumps())
     return
-  else:
-    print('not checked already', asn.dumps())
   parval = asn.value
   asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
   safetycond = 'safety_cond' in asn.dumps()
-  if safetycond:
-    print(1)
   if hasattr(parval, 'type'):  
-    if safetycond:
-      print(2)
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
-    else:
-      if safetycond:
-        print(' | | | Parval type not bool or compare')
-        print(parval.type)
-        print(parval.help())
-  else:
-    print(' > > > Parent value does not have type attr: asn.value=',asn.value.dumps())
-    print(parval.help())    
-    print(' ')
   makescratch = ''
   is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
   if not hasScratch(asn, asn.target.value):

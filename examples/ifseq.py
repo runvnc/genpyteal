@@ -10,6 +10,6 @@ def fn1(n):
   foo(n+2)
   foo(n-2)
 
-def test(x):
+def teal(x):
   if x == 1:
     fn1()
