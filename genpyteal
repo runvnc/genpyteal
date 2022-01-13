@@ -35,15 +35,15 @@ def getScratch(red):
     return ''
 
 def hasScratch(red, varname):
-  s = red.find_all('assign')
-  if isinstance(s, list):
-    s = s.filter(lambda x: 'ScratchVar' in x)
-    s = s.filter(lambda x: x.name == varname)
-    if not s:
-      return False
-    else:
-      return True
-  return False       
+  if varname == 'result':
+    found = True
+  parentdef = red.parent_find('def')
+  s = parentdef.find_all('assign')
+  match = f"{varname} = ScratchVar"
+  if match in s.dumps():
+    return True
+  else:
+    return False
 
 def findmap(red, which, how):
   l = red.find_all(which)
@@ -62,9 +62,12 @@ def all(red):
       findmap(red, 'int', ints)
       findmap(red, 'assign', assigns)
       findmap(red, 'ifelseblock', ifs)
+      findmap(red, 'call', calls)
     strs_ = []
     hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
+    if hasattr(red,'type') and red.type == 'name':
+      return
     for nd in red:
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
       if hasMulti:
@@ -104,6 +107,16 @@ def assigns(asn):
     asn.insert_before(makescratch)
   asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
+def calls(nd):
+  #all(nd.value)
+  try:
+    if nd.type != 'call':
+      return
+    if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:
+      nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent.dumps().replace('Begin()','Begin').replace('Submit()','Submit')}")
+  except:
+    pass
+  
 def ifs(if_):
   all(if_.value)
   if_.value = f"If({if_.value[0].test.dumps()}, {if_.value[0].value.dumps()})\n\n"
@@ -131,7 +144,7 @@ def convert(fname, mode):
   findmap(red, 'def', all)  
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)")
-  print("globals().update(InnerTxnBuilder.__members__)")
+
   print(red.dumps())
   print(f"if __name__ == \"__main__\":\n    print(compileTeal(teal(), mode=Mode.{mode}, version=5))")
 
