@@ -10,4 +10,4 @@ def teal():
     name = "Bob"
     Log(name)
     retval = 100
-    return retval.load()
+    return retval

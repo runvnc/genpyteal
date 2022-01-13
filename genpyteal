@@ -60,6 +60,7 @@ def all(red):
             red.decorators.append("@Subroutine(TealType.none)")
       findmap(red, 'boolean_operator', bools)
       findmap(red, 'int', ints)
+      findmap(red, 'string', strings)
       findmap(red, 'assign', assigns)
       findmap(red, 'ifelseblock', ifs)
       findmap(red, 'call', calls)
@@ -151,6 +152,16 @@ def ints(i):
   except:
     pass
   i.replace(f"Int({i.value})")
+
+def strings(i):
+  try:
+    if i.parent.type == 'def_argument':
+      return
+    if i.parent.parent.parent.value[0].value == 'Bytes':
+      return
+  except:
+    pass
+  i.replace(f"Bytes({i.dumps()})")
 
 progroot = 0
 
