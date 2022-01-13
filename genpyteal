@@ -63,6 +63,7 @@ def all(red):
       findmap(red, 'assign', assigns)
       findmap(red, 'ifelseblock', ifs)
       findmap(red, 'call', calls)
+      findmap(red, 'name', names)
     strs_ = []
     hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
@@ -114,6 +115,22 @@ def calls(nd):
       return
     if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:          
       nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent[0].dumps()}")
+  except:
+    pass
+
+def names(nd):
+  if nd.parent.type == 'assignment' and nd.parent.target == nd:
+    return
+  if nd.dumps()+'.load()' in nd.parent.dumps():
+    return
+  if nd.dumps()+'.store(' in nd.parent.dumps():
+    return
+
+  varname = nd.dumps()
+
+  try:
+    if hasScratch(nd, varname):
+      nd.replace(f"{nd.dumps()}.load()")
   except:
     pass
   
