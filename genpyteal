@@ -34,10 +34,23 @@ def getScratch(red):
   else:
     return ''
 
+cnt = 0
+
 def hasScratch(red, varname):
-  if varname == 'result':
-    found = True
-  parentdef = red.parent_find('def')
+  try:
+    global cnt
+    cnt = cnt + 1
+    #print(cnt)
+  except BaseException as err:
+    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(traceback.format_exc())
+    pass  
+  parentdef = None
+  if hasattr(red, 'parentdef'):
+    parentdef = red.parentdef
+  else:
+    parentdef = red.parent_find('def')
+    red.parentdef = parentdef
   s = parentdef.find_all('assign')
   match = f"{varname} = ScratchVar"
   if match in s.dumps():
@@ -142,15 +155,17 @@ def names(nd):
     if hasScratch(nd, varname):
       nd.replace(f"{nd.dumps()}.load()")
     else:
-      try:        
+      try:
         if nd.value in ['fee','sender','first_valid','last_valid','receiver','note','lease',
-                                 'amount', 'close_remainder_to', 'vote_pk', 'type', 'type_enum', 'xfer_asset', 'asset_amount',
-                                 'asset_sender', 'asset_receiver', 'asset_close_to', 'group_index', 'tx_id', 'application_id',
-                                 'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
-                                 'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
-                                 'config_asset_manager', 'created_asset_id', 'created_application_id']:
-          if not ('()' in nd.parent.dumps()):
-            nd.parent.replace(nd.parent.dumps()+'()')      
+                              'amount', 'close_remainder_to', 'vote_pk', 'type', 'type_enum', 'xfer_asset', 'asset_amount',
+                               'asset_sender', 'asset_receiver', 'asset_close_to', 'group_index', 'tx_id', 'application_id',
+                               'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
+                               'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
+                               'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address']:
+
+          if nd.parent.value[0].value in ['Txn', 'GTxn', 'Global']:
+            if not ('()' in nd.parent.dumps()):
+              nd.parent.replace(nd.parent.dumps()+'()')      
       except:
         pass  
   except:
@@ -168,7 +183,8 @@ def ints(i):
   try:
     if i.parent.type == 'def_argument':
       return
-    if i.parent.parent.parent.value[0].value == 'Int':
+    parname = i.parent.parent.parent.value[0].value
+    if parname == 'Int' or parname == 'Arg':
       return
   except:
     pass
@@ -178,7 +194,8 @@ def strings(i):
   try:
     if i.parent.type == 'def_argument':
       return
-    if i.parent.parent.parent.value[0].value == 'Bytes':
+    parval = i.parent.parent.parent.value[0].value
+    if parval == 'Bytes' or parval == 'Addr':
       return
   except:
     pass

@@ -3,7 +3,7 @@ def pay(amount: uint64, receiver: bytes):
     Begin()
     SetFields({
         TxnField.type_enum: TxnType.Payment,
-        TxnField.sender: Global.current_application_address(),
+        TxnField.sender: Global.current_application_address,
         TxnField.amount: amount,
         TxnField.receiver: receiver
         })
