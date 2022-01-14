@@ -93,7 +93,7 @@ def all(red):
     scratch = getScratch(red)
     if hasattr(red,'type') and red.type == 'name':
       return
-    try:
+    try:      
       for nd in red:
         nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
         if hasMulti:
@@ -115,6 +115,9 @@ def all(red):
         retstr = f"{scratch}\nreturn "
       red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
       red.value = removeblanks(red.value.dumps())
+    elif len(strs_) == 1:
+      if red.find('ifelseblock') or red.find('while'):
+        red.value = f"return {strs_[0]}\n" 
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -134,7 +137,6 @@ def assigns(asn):
   asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
-  safetycond = 'safety_cond' in asn.dumps()
   if hasattr(parval, 'type'):  
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
@@ -183,7 +185,7 @@ def names(nd):
                                'group_size']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
-            if not (f"{varname}()" in nd.parent.dumps()):   #('()' in nd.parent.dumps()):
+            if not (f"{varname}()" in nd.parent.dumps()):
               nd.parent.replace(nd.parent.dumps()+'()')            
       except:
         pass  
@@ -196,7 +198,11 @@ def whiles(w):
   
 def ifs(if_):
   all(if_.value)
-  if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()} )\n\n"
+  else_ = ''
+  if len(if_.value) == 2:
+    findmap(if_.value,'return',returns)
+    else_ = ', ' + if_.value[1].value.dumps()
+  if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
 
 def returns(ret):
   all(ret.value)
