@@ -64,6 +64,7 @@ def findmap(red, which, how):
 
 def all(red):
   try:
+    hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
       if red.type == 'def' and red.name != 'teal':
         if len(red.decorators) == 0:
@@ -71,15 +72,17 @@ def all(red):
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
-      findmap(red, 'assign', assigns)
+      findmap(red, 'assign', assigns)      
       findmap(red, 'boolean_operator', bools)
+      if hasMulti:
+        findmap(red, 'return', returns)
       findmap(red, 'int', ints)
       findmap(red, 'string', strings)
       findmap(red, 'ifelseblock', ifs)
       findmap(red, 'call', calls)
       findmap(red, 'name', names)
     strs_ = []
-    hasMulti = hasMultiStmt(red)
+    #hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
     if hasattr(red,'type') and red.type == 'name':
       return
