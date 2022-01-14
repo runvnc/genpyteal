@@ -6,7 +6,7 @@ secret = Bytes("base32", "2323232323232323")
 timeout = 3000
 ZERO_ADDR = Global.zero_address()
 
-def teal(
+def sig(
     tmpl_seller=alice,
     tmpl_buyer=bob,
     tmpl_fee=1000,

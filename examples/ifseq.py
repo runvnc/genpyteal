@@ -10,7 +10,7 @@ def fn1(n):
   foo(n+2)
   foo(n-2)
 
-def teal():
+def app():
   if 1 == 1:
     return 1
   return 0

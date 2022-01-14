@@ -5,7 +5,7 @@ def g(x):
 def f(n):
     return g(n)
 
-def teal():
+def app():
     x = f(30)
     name = "Bob"
     Log(name)

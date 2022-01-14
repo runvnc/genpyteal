@@ -1,0 +1,12 @@
+#!/bin/bash
+EXAMPLES="examples/*"
+for ex in $EXAMPLES
+do
+  echo "Testing $ex.."
+  if ! ./genteal $ex; then
+    echo -e "\e[91mFail\e[39m"
+  else
+    echo -e "\e[92mSuccess\e[39m"
+  fi
+done
+  

@@ -18,7 +18,7 @@ def hasMultiStmt(node):
   l =[]
   try:
     for nd in node:
-      nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+      nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
       nodes = nodes.filter(lambda x: x != None)
       l.extend(nodes)
     return len(l) > 1
@@ -35,6 +35,11 @@ def getScratch(red):
     return ''
 
 cnt = 0
+
+def removeblanks(ml):
+  lines = ml.splitlines()
+  lines = filter(lambda l: l != '' and l.strip() != '', lines)
+  return '\n'.join(lines)
 
 def hasScratch(red, varname):
   try:
@@ -66,7 +71,7 @@ def all(red):
   try:
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
-      if red.type == 'def' and red.name != 'teal':
+      if red.type == 'def' and red.name != 'app' and red.name != 'sig':
         if len(red.decorators) == 0:
           if 'return' in red.dumps():
             red.decorators.append("@Subroutine(uint64)")
@@ -74,11 +79,13 @@ def all(red):
             red.decorators.append("@Subroutine(TealType.none)")
       findmap(red, 'assign', assigns)      
       findmap(red, 'boolean_operator', bools)
-      if hasMulti:
+      if hasMulti or red.type == 'while':
         findmap(red, 'return', returns)
       findmap(red, 'int', ints)
       findmap(red, 'string', strings)
       findmap(red, 'ifelseblock', ifs)
+      if red.type != 'while':      
+        findmap(red, 'while', whiles)
       findmap(red, 'call', calls)
       findmap(red, 'name', names)
     strs_ = []
@@ -88,18 +95,26 @@ def all(red):
       return
     try:
       for nd in red:
-        nodes = nd.find_all(['ifelseblock','atomtrailers', 'return'], recursive=False)
+        nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
         if hasMulti:
-          findmap(nodes, 'return', returns)
-          
+          findmap(nodes, 'return', returns)          
         strs = nodes.map(catchdump)
         strs = strs.filter(lambda x: x != None)
         strs_.extend(strs)
     except:
       pass
     if len(strs_) > 1:
-      strlist = ',\n\t'.join(strs_)
-      red.value = f"{scratch}\nreturn Seq([\n\t{strlist} ])\n"    
+      strs_ = filter(lambda x: x != '', strs_)
+      try:
+        strs_ = removeblanks(strs_)
+      except:
+        pass
+      strlist = ',\n\t'.join(strs_)      
+      retstr = ''
+      if red.type == 'def':
+        retstr = f"{scratch}\nreturn "
+      red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
+      red.value = removeblanks(red.value.dumps())
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -164,15 +179,20 @@ def names(nd):
                                'asset_sender', 'asset_receiver', 'asset_close_to', 'group_index', 'tx_id', 'application_id',
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
-                               'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address']:
+                               'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
+                               'group_size']:
 
-          if nd.parent.value[0].value in ['Txn', 'GTxn', 'Global']:
-            if not ('()' in nd.parent.dumps()):
-              nd.parent.replace(nd.parent.dumps()+'()')      
+          if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
+            if not (f"{varname}()" in nd.parent.dumps()):   #('()' in nd.parent.dumps()):
+              nd.parent.replace(nd.parent.dumps()+'()')            
       except:
         pass  
   except:
     pass
+
+def whiles(w):
+  all(w)
+  w.replace(f"While( {w.test.dumps()}).Do(\n{w.value.dumps()} )")
   
 def ifs(if_):
   all(if_.value)
@@ -206,21 +226,30 @@ def strings(i):
 
 progroot = 0
 
-def convert(fname, mode):
+def isSigDef(nd):
+  try:
+    if nd.type == 'def' and nd.name=='sig':
+      return True
+  except:
+    pass
+  return False
+
+def convert(fname):
+  mode = 'Application'
+  entry = 'app'
   source = open(fname, "r")
   red = RedBaron(source.read())
+  sig = red.filter(isSigDef)
+  if sig: 
+    mode = 'Signature'
+    entry = 'sig'
   progroot = red
+  
   findmap(red, 'def', all)  
   print("from pyteal import *\n")
-  print("globals().update(TealType.__members__)")
+  print("globals().update(TealType.__members__)\n\n")
 
   print(red.dumps())
-  print(f"if __name__ == \"__main__\":\n    print(compileTeal(teal(), mode=Mode.{mode}, version=5))")
+  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 
-mode = 'Application'
-
-if len(sys.argv) > 2:
-  if sys.argv[2] == 'sig':
-    mode = 'Signature'
-convert(sys.argv[1], mode)
-
+convert(sys.argv[1])
