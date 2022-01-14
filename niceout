@@ -1,2 +1,3 @@
 #!/bin/bash
-boxes -d stone2 -p a4v1 -s 115 | sed  's/^/     /' | pygmentize -O style=material -f 256 -l python
+# -p a1v1
+boxes -d stone2 -p a4v1 -s 115 | pygmentize -O style=material -f 256 -l python 
