@@ -141,6 +141,18 @@ def names(nd):
   try:
     if hasScratch(nd, varname):
       nd.replace(f"{nd.dumps()}.load()")
+    else:
+      try:        
+        if nd.value in ['fee','sender','first_valid','last_valid','receiver','note','lease',
+                                 'amount', 'close_remainder_to', 'vote_pk', 'type', 'type_enum', 'xfer_asset', 'asset_amount',
+                                 'asset_sender', 'asset_receiver', 'asset_close_to', 'group_index', 'tx_id', 'application_id',
+                                 'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
+                                 'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
+                                 'config_asset_manager', 'created_asset_id', 'created_application_id']:
+          if not ('()' in nd.parent.dumps()):
+            nd.parent.replace(nd.parent.dumps()+'()')      
+      except:
+        pass  
   except:
     pass
   
