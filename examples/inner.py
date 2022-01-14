@@ -12,7 +12,7 @@ def pay(amount: uint64, receiver: bytes):
 def teal():
     pay(10, Addr('6ZHGHH5Z5CTPCF5WCESXMGRSVK7QJETR63M3NY5FJCUYDHO57VTCMJOBGY'))
     result = 0
-    if Txn.first_valid() > 1000000:
+    if Txn.first_valid > 1000000:
         result = 1
     return result
 

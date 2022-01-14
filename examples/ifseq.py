@@ -10,7 +10,6 @@ def fn1(n):
   foo(n+2)
   foo(n-2)
 
-@Subroutine(uint64)
 def teal():
   if 1 == 1:
     return 1
