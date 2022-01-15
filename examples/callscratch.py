@@ -9,4 +9,3 @@ def app():
     name = "Bob"
     print(name)
     return 100
-    #return retval
