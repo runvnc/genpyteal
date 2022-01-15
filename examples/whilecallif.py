@@ -1,20 +1,18 @@
-target = 100
-
 def proc(n):
   return n * 2
 
-def acceptable(n):
+def acceptable(n, target):
   if n >= target:
     print("Acceptable. Diff is:")
-    print(n - diff)
-    return True
+    print(Itob(n - target))
+    return 1
   else:
-    return False
+    return 0
 
 def app():
   total = 1
   i = 0
-  while not acceptable(total):
+  while not acceptable(total, Btoi(Txn.application_args[0])):
     total = proc(total)
     i += 1
   return i
