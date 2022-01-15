@@ -32,14 +32,20 @@ To show the AST (FST) of a Python program (uses RedBaron .help(), and requires `
 
 ## Supported constructs
 
-`statement list` (= Seq), `integer const` ( = Int(n)), `if/else`, `while`, `print` (= `Log`), `+` ( = Concat(str1, str2) ), (maybe something I am forgetting).
+`statement list` (= Seq), `integer const` ( = Int(n)), `if/else`, `while`, `print` (= `Log`), `+` ( = Concat(str1, str2) ), 
+`True/False` (= 1/0), `and/or/not` ...
+(maybe something I am forgetting).
 
 ## Details
 
 You can use a subset of Python. For scratch variables, you will need to initialize them at the beginning of a function, such as `x = 0` or `s = "tom"`. It uses 
-that to determine the type. Sometimes you may need to specify Bytes or Int still. Integer/string literals get Int/Bytes added automatically. You can use print instead of Log. 
+that to determine the type. Sometimes you may need to specify Bytes or Int still. Integer/string literals get Int/Bytes added automatically. You can use `print` instead of Log. 
 
-If you want to print a number, you can use numtostr:
+For transaction fields, you can leave off the parenthesis, e.g. `Txn.sender` instead of `Txn.sender()`.
+
+It will assume functions return `uint64` unless you specify `@bytes` or there is no return, which will automatically insert `@Subroutine(TealType.none)`
+
+If you want to print a number in the log, you can use the numtostr function I made:
 
 ```python
 from lib import util
