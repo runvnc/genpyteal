@@ -236,8 +236,10 @@ def ifs(if_):
   if len(if_.value) == 2:
     findmap(if_.value,'return',returns)
     else_ = ', ' + if_.value[1].value.dumps()
-  
-  if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
+  try:  
+    if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
+  except:
+    pass
 
 def returns(ret):
   all(ret.value)
