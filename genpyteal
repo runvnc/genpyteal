@@ -88,7 +88,8 @@ def all(red, x = ''):
       for nd in red:
         nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
         if hasMulti:
-          findmap(nodes, 'return', returns)          
+          findmap(nodes, 'return', returns)
+        
         strs = nodes.map(catchdump)
         strs = strs.filter(lambda x: x != None)
         strs_.extend(strs)
@@ -111,9 +112,9 @@ def all(red, x = ''):
       red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
       red.value = removeblanks(red.value.dumps())
     elif len(strs_) == 1:
-      # True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
-      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert'  ):      
-        red.value = f"return {strs_[0]}\n".replace('return return', 'return') 
+      if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
+      #if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert'  ):      
+        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return')
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -144,10 +145,10 @@ def concats(ct):
 def assigns(asn):  
   if 'ScratchVar' in asn.value.dumps():
     return
-  if hasattr(asn, 'asnChecked'):
-    return
+  #if hasattr(asn, 'asnChecked'):
+  #  return
   parval = asn.value
-  asn.asnChecked = True
+  #asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
   if hasattr(parval, 'type'):  
@@ -281,6 +282,7 @@ def convert(fname):
   progroot = red
   
   findmap(red, 'def', all)  
+  findmap(red, 'assign', assigns)
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 

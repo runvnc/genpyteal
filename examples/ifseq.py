@@ -1,12 +1,6 @@
-#def put(n):
-#  Log("Hello")
 
-def foo():
+def foo(b):
   x = b
-
-#def fn1(n):
-#  foo(n+2)
-#  foo(n-2)
 
 def app():
   foo(10)
