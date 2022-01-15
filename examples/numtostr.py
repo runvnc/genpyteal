@@ -12,7 +12,3 @@ def numtostr(num):
     if n == 0: done = True
     i = i + 1
   return Extract(out, 12 - i + 1, i)
-
-def app():
-  print("Here is a number: " + numtostr(837343))
-  return 1
