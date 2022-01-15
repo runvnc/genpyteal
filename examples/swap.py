@@ -19,7 +19,8 @@ def sig(
     no_closeto = Txn.close_remainder_to == ZERO_ADDR
     no_rekeyto = Txn.rekey_to == ZERO_ADDR
     no_close_rekey = no_closeto and no_rekeyto
-    safety_cond = is_payment and no_close_rekey
+    safety_cond = is_payment and no_rekeyto and no_close_rekey
+    # no_close_rekey
       
     recv_cond = (Txn.receiver == tmpl_seller) and (tmpl_hash_fn(Arg(0)) == tmpl_secret)
 

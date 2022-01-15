@@ -79,6 +79,7 @@ def all(red):
             red.decorators.append("@Subroutine(TealType.none)")
       findmap(red, 'assign', assigns)      
       findmap(red, 'boolean_operator', bools)
+      findmap(red, 'binary_operator', concats)
       if hasMulti or red.type == 'while':
         findmap(red, 'return', returns)
       findmap(red, 'int', ints)
@@ -126,7 +127,24 @@ def all(red):
 def bools(boolOp):
   all(boolOp.first)
   all(boolOp.second)
-  boolOp.parent.value = f"{boolOp.value.title()}( {boolOp.first}, {boolOp.second} )"
+  try:
+    boolOp.replace(f"{boolOp.value.title()}( {boolOp.first}, {boolOp.second} )")
+  except:
+    pass
+  #  print(boolOp.help())
+  #boolOp.parent.value = f"{boolOp.value.title()}( {boolOp.first}, {boolOp.second} )"
+
+  
+def concats(ct):
+  all(ct.first)
+  all(ct.second)
+  if ct.first.type == 'string' or ct.second.type == 'string':
+    ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
+  try:
+    if ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes':
+      ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")  
+  except:
+    pass
 
 def assigns(asn):  
   if 'ScratchVar' in asn.value.dumps():
@@ -182,9 +200,14 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size']:
+                               'group_size', 'application_args']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
+            try:
+              if nd.parent.parent.value[2].type == 'getitem':
+                return
+            except:
+              pass
             if not (f"{varname}()" in nd.parent.dumps()):
               nd.parent.replace(nd.parent.dumps()+'()')            
       except:
@@ -213,10 +236,16 @@ def ints(i):
     if i.parent.type == 'def_argument':
       return
     parname = i.parent.parent.parent.value[0].value
-    if parname == 'Int' or parname == 'Arg':
+    if parname == 'Int' or parname == 'Arg' or parname == 'application_args':
       return
+    try:
+      if i.parent.parent.value[1].value == 'application_args':
+        return
+    except:
+      pass
   except:
     pass
+    
   i.replace(f"Int({i.value})")
 
 def strings(i):
@@ -253,7 +282,7 @@ def convert(fname):
   
   findmap(red, 'def', all)  
   print("from pyteal import *\n")
-  print("globals().update(TealType.__members__)\n\n")
+  print("globals().update(TealType.__members__)\n")
 
   print(red.dumps())
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
