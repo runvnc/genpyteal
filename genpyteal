@@ -158,6 +158,9 @@ def assigns(asn):
   if hasattr(parval, 'type'):  
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
+    if hasattr(parval, 'value'):
+      if parval.value in ['And', 'Or']:
+        return
   makescratch = ''
   is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
   if not hasScratch(asn, asn.target.value):
