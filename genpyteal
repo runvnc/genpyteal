@@ -46,6 +46,8 @@ def hasScratch(red, varname):
   else:
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
+  if parentdef is None:
+    return False
   s = parentdef.find_all('assign')
   match = f"{varname} = ScratchVar"
   if match in s.dumps():
@@ -145,6 +147,8 @@ def concats(ct):
 def assigns(asn):  
   if 'ScratchVar' in asn.value.dumps():
     return
+  if asn.parent_find('def') is None:
+    return
   #if hasattr(asn, 'asnChecked'):
   #  return
   parval = asn.value
@@ -243,6 +247,13 @@ def fixreturns(d):
   except:
     pass
 
+def addreturns(d):
+  try:
+    if d[0][0].value != 'return':
+      d[0] = f"return {d[0].dumps()}"
+  except:
+    pass
+
 def ints(i):
   try:
     if i.parent.type == 'def_argument':
@@ -296,6 +307,7 @@ def convert(fname):
   findmap(red, 'def', all)  
   findmap(red, 'assign', assigns)
   findmap(red, 'def', fixreturns)
+  findmap(red, 'def', addreturns)
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 

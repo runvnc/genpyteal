@@ -8,5 +8,5 @@ def app():
     x = f(30)
     name = "Bob"
     print(name)
-    retval = 100
-    return retval
+    return 100
+    #return retval
