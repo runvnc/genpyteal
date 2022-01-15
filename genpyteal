@@ -111,8 +111,9 @@ def all(red, x = ''):
       red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
       red.value = removeblanks(red.value.dumps())
     elif len(strs_) == 1:
-      if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
-        red.value = f"return {strs_[0]}\n" 
+      # True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
+      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert'  ):      
+        red.value = f"return {strs_[0]}\n".replace('return return', 'return') 
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
