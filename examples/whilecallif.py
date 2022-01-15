@@ -1,13 +1,14 @@
+from lib import util
+
 def proc(n):
   return n * 2
 
 def acceptable(n, target):
   if n >= target:
-    print("Acceptable. Diff is:")
-    print(Itob(n - target))
-    return 1
+    print("Acceptable. Diff is " + util.numtostr(n - target))
+    return True
   else:
-    return 0
+    return False
 
 def app():
   total = 1
