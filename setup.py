@@ -20,8 +20,6 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    packages=["genpyteal"],
-    include_package_data=True,
     install_requires=["redbaron", "pyteal"],
-    scripts=['./genpyteal', './genteal', './showast']
+    scripts=['./genpyteal', './genteal', './showast', './niceout', './nicecat']
 )
