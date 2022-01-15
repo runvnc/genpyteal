@@ -111,7 +111,7 @@ def all(red, x = ''):
       red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
       red.value = removeblanks(red.value.dumps())
     elif len(strs_) == 1:
-      if red.find('ifelseblock') or red.find('while'):
+      if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
         red.value = f"return {strs_[0]}\n" 
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
@@ -235,10 +235,10 @@ def ints(i):
     if i.parent.type == 'def_argument':
       return
     parname = i.parent.parent.parent.value[0].value
-    if parname == 'Int' or parname == 'Arg' or parname == 'application_args':
+    if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
       return
     try:
-      if i.parent.parent.value[1].value == 'application_args':
+      if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
         return
     except:
       pass
