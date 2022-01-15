@@ -26,6 +26,8 @@ def hasMultiStmt(node):
     pass
 
 def getScratch(red):
+  if not hasattr(red, 'find_all'):
+    return ''
   s = red.find_all('assign')
   if isinstance(s, list):
     s = s.filter(lambda x: 'ScratchVar' in x)
@@ -132,6 +134,14 @@ def bools(boolOp):
   #  print(boolOp.help())
   #boolOp.parent.value = f"{boolOp.value.title()}( {boolOp.first}, {boolOp.second} )"
 
+def unitaries(un):
+  all(un.value)
+  try:
+    un.replace(f"{un.value.title()}( {un.target.dumps()} )")
+  except:
+    pass
+  #  print(boolOp.help())
+  #boolOp.parent.value = f"{boolOp.value.title()}( {boolOp.first}, {boolOp.second} )"
   
 def concats(ct):
   all(ct.first)
@@ -159,7 +169,7 @@ def assigns(asn):
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
     if hasattr(parval, 'value'):
-      if parval.value in ['And', 'Or']:
+      if parval.value in ['And', 'Or', 'Not']:
         return
   makescratch = ''
   is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
@@ -308,6 +318,7 @@ def convert(fname):
     entry = 'sig'
   progroot = red
   findmap(red, 'print', prints)
+  findmap(red, 'unitary_operator', unitaries)
   findmap(red, 'return', returns)  
   findmap(red, 'def', all)  
   findmap(red, 'assign', assigns)
