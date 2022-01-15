@@ -1,0 +1,10 @@
+#!/bin/bash
+cp README_.md README.md
+EXAMPLES="examples/*"
+for ex in $EXAMPLES
+do
+  echo "## $ex " >> README.md
+  echo "```python" >> README.md
+  cat "$ex" >> README.md
+  echo "```" >>> README.md
+done
