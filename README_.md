@@ -41,6 +41,8 @@ To show the AST (FST) of a Python program (uses RedBaron .help(), and requires `
 You can use a subset of Python. For scratch variables, you will need to initialize them at the beginning of a function, such as `x = 0` or `s = "tom"`. It uses 
 that to determine the type. Sometimes you may need to specify Bytes or Int still. Integer/string literals get Int/Bytes added automatically. You can use `print` instead of Log. 
 
+Name the main function `app` to indicate a stateful application contract, or `sig` for a LogicSig contract.
+
 For transaction fields, you can leave off the parenthesis, e.g. `Txn.sender` instead of `Txn.sender()`.
 
 It will assume functions return `uint64` unless you specify `@bytes` or there is no return, which will automatically insert `@Subroutine(TealType.none)`
