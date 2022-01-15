@@ -1,0 +1,15 @@
+#pragma version 5
+int 15
+store 0
+load 0
+int 10
+>
+load 0
+int 20
+<
+&&
+load 0
+int 0
+==
+||
+return

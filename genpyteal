@@ -63,7 +63,7 @@ def all(red, x = ''):
     if hasattr(red,'type'):
       if red.type == 'def' and red.name != 'app' and red.name != 'sig':
         if len(red.decorators) == 0:
-          if 'return' in red.dumps():
+          if 'return' in red.dumps() or 'Return' in red.dumps():
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
@@ -172,8 +172,12 @@ def calls(nd):
       return
     if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:          
       nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent[0].dumps()}")
+  
   except:
     pass
+
+def prints(p):
+  p.replace(f"Log{p.value.dumps()}")
 
 def names(nd):
   if nd.parent.type == 'assignment' and nd.parent.target == nd:
@@ -232,6 +236,13 @@ def returns(ret):
   all(ret.value)
   ret.replace(f"Return( {ret.value.dumps().replace('return ','')} )")
 
+def fixreturns(d):
+  try:
+    if d[0][0].value == 'Return':
+      d[0] = f"return {d[0][1].dumps()}"
+  except:
+    pass
+
 def ints(i):
   try:
     if i.parent.type == 'def_argument':
@@ -280,9 +291,11 @@ def convert(fname):
     mode = 'Signature'
     entry = 'sig'
   progroot = red
-  
+  findmap(red, 'print', prints)
+  findmap(red, 'return', returns)  
   findmap(red, 'def', all)  
   findmap(red, 'assign', assigns)
+  findmap(red, 'def', fixreturns)
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
