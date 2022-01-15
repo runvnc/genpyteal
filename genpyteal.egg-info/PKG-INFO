@@ -1,0 +1,56 @@
+Metadata-Version: 2.1
+Name: genpyteal
+Version: 1.0.0
+Summary: Generate PyTeal with normal Python
+Home-page: https://github.com/runvnc/genpyteal
+Author: runvnc (Jason Livesay)
+Author-email: runvnc@gmail.com
+License: MIT
+Description: # genpyteal
+        Experiment to rewrite Python into PyTeal using RedBaron
+        
+        ```python
+        sum = 1
+        
+        def put(n,m):
+          print(n,m)
+        
+        def foo(b):
+          put(sum, b)
+        
+        def fn1(n):
+          foo(n+2)
+          foo(n-2)
+        
+        def test(x):
+          if x == 1:
+            fn1()
+        
+        # ---------------------------------------------
+        
+        sum = 1
+        
+        def put(n,m):
+          print(n,m)
+        
+        def foo(b):
+          put(sum, b)
+        
+        def fn1(n):
+            Seq([foo(n+2),
+            foo(n-2)])
+        
+        
+        def test(x):
+          If(x == 1,
+              fn1()
+          )
+        
+        
+        ```
+        
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.7
+Description-Content-Type: text/markdown
