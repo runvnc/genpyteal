@@ -1,0 +1,37 @@
+from pyteal import *
+
+globals().update(TealType.__members__)
+
+
+@Subroutine(TealType.bytes)
+def numtostr(num):
+    out = ScratchVar(TealType.bytes)
+    i = ScratchVar(TealType.uint64)
+    digit = ScratchVar(TealType.uint64)
+    n = ScratchVar(TealType.uint64)
+    done = ScratchVar(TealType.uint64)
+    return  Seq([
+    	out.store(Bytes("             ")),
+    	i.store(Int(0)),
+    	digit.store(Int(0)),
+    	n.store(num),
+    	done.store(1),
+    	While( Not( done.load() )).Do(
+          Seq([
+    	     digit.store(n.load() % Int(10)),
+    	     out.store(SetByte(out.load(), Int(2)-i.load(), digit.load()+Int(48))),
+    	     n.store(n.load() / Int(10)),
+    	     If( n.load() == Int(0), done.store(Int(0))
+                  ),
+    	     i.store(i.load() + Int(1)) ])
+       ),
+    	Return( out.load() ) ])
+
+
+def app():
+    return  Seq([
+    	Log(numtostr(Int(45))),
+    	Return( Int(1) ) ])
+
+if __name__ == "__main__":
+    print(compileTeal(app(), mode=Mode.Application, version=5))

@@ -61,6 +61,11 @@ def findmap(red, which, how):
   l = red.find_all(which)
   l.map(how)
 
+def decs(d):
+  if d.value.dumps() == 'bytes':
+    d.parent.decorators.pop()
+    d.parent.decorators.append('@Subroutine(TealType.bytes)')
+
 def all(red, x = ''):
   try:
     hasMulti = hasMultiStmt(red)
@@ -199,6 +204,16 @@ def prints(p):
 def names(nd):
   if nd.parent.type == 'assignment' and nd.parent.target == nd:
     return
+    
+  f = nd.find('name', lambda n: n.value=='False')
+  if f:
+    f.replace('Int(0)')
+    return
+  t = nd.find('name', lambda n: n.value=='True')
+  if t:
+    t.replace('Int(1)')
+    return
+    
   if nd.dumps()+'.load()' in nd.parent.dumps():
     return
   if nd.dumps()+'.store(' in nd.parent.dumps():
@@ -324,6 +339,7 @@ def convert(fname):
   findmap(red, 'assign', assigns)
   findmap(red, 'def', fixreturns)
   findmap(red, 'def', addreturns)
+  findmap(red, 'decorator', decs)
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 

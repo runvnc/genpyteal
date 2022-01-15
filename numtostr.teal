@@ -1,0 +1,65 @@
+#pragma version 5
+byte "Here is a number: "
+int 837343
+callsub sub0
+concat
+log
+int 1
+return
+sub0: // numtostr
+store 0
+byte "             "
+store 1
+int 0
+store 2
+int 0
+store 3
+load 0
+store 4
+int 0
+store 5
+sub0_l1:
+load 5
+!
+bz sub0_l5
+load 4
+int 10
+%
+store 3
+load 1
+int 12
+load 2
+-
+load 3
+int 48
++
+setbyte
+store 1
+load 4
+int 10
+/
+store 4
+load 4
+int 0
+==
+bnz sub0_l4
+sub0_l3:
+load 2
+int 1
++
+store 2
+b sub0_l1
+sub0_l4:
+int 1
+store 5
+b sub0_l3
+sub0_l5:
+load 1
+int 12
+load 2
+-
+int 1
++
+load 2
+extract3
+retsub
