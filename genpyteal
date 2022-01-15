@@ -34,22 +34,12 @@ def getScratch(red):
   else:
     return ''
 
-cnt = 0
-
 def removeblanks(ml):
   lines = ml.splitlines()
   lines = filter(lambda l: l != '' and l.strip() != '', lines)
   return '\n'.join(lines)
 
 def hasScratch(red, varname):
-  try:
-    global cnt
-    cnt = cnt + 1
-    #print(cnt)
-  except BaseException as err:
-    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
-    sys.stderr.write(traceback.format_exc())
-    pass  
   parentdef = None
   if hasattr(red, 'parentdef'):
     parentdef = red.parentdef
@@ -67,7 +57,7 @@ def findmap(red, which, how):
   l = red.find_all(which)
   l.map(how)
 
-def all(red):
+def all(red, x = ''):
   try:
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
@@ -103,6 +93,10 @@ def all(red):
         strs = strs.filter(lambda x: x != None)
         strs_.extend(strs)
     except:
+      if x == 'if':
+        sys.stderr.write('looperr')
+        sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+        sys.stderr.write(traceback.format_exc())  
       pass
     if len(strs_) > 1:
       strs_ = filter(lambda x: x != '', strs_)
@@ -194,7 +188,7 @@ def names(nd):
       nd.replace(f"{nd.dumps()}.load()")
     else:
       try:
-        if nd.value in ['fee','sender','first_valid','last_valid','receiver','note','lease',
+        if nd.value in ['fee','sender','first_valid','last_valid','receiver','note','lease', 'round', 
                               'amount', 'close_remainder_to', 'vote_pk', 'type', 'type_enum', 'xfer_asset', 'asset_amount',
                                'asset_sender', 'asset_receiver', 'asset_close_to', 'group_index', 'tx_id', 'application_id',
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
@@ -220,11 +214,16 @@ def whiles(w):
   w.replace(f"While( {w.test.dumps()}).Do(\n{w.value.dumps()} )")
   
 def ifs(if_):
-  all(if_.value)
+  all(if_.value[0], 'if')
+  try:
+    all(if_.value[1], 'if')
+  except:
+    pass
   else_ = ''
   if len(if_.value) == 2:
     findmap(if_.value,'return',returns)
     else_ = ', ' + if_.value[1].value.dumps()
+  
   if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
 
 def returns(ret):
