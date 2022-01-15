@@ -1,10 +1,17 @@
 #!/bin/bash
 cp README_.md README.md
-EXAMPLES="examples/*"
+EXAMPLES="examples/*.py"
 for ex in $EXAMPLES
 do
   echo "## $ex " >> README.md
-  echo "```python" >> README.md
+  echo "" >> README.md
+  echo "\`\`\`python" >> README.md
   cat "$ex" >> README.md
-  echo "```" >>> README.md
+  echo "\`\`\`" >> README.md
 done
+
+echo "" >> README.md
+echo "## lib/util.py" >> README.md
+echo "\`\`\`python" >> README.md
+cat examples/lib/util.py >> README.md
+echo "\`\`\`" >> README.md
