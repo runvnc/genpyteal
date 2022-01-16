@@ -4,7 +4,7 @@ Converts Python to PyTeal. Your mileage will vary depending on how much you devi
 Its quite easy to get an error by doing something not supported.  However, it often still outputs useful PyTeal that you can then
 fix up.
 
-
+If you appreciate this tool, you are welcome to send ALGOs to `RMONE54GR6CYOJREKZQNFCZAUGJHSPBUJNFRBTXS4NKNQL3NJQIHVCS53M`.
 ## Installation
 
 `pip3 install genpyteal` or `pip install genpyteal`
