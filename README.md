@@ -36,8 +36,6 @@ To show the AST (FST) of a Python program (uses RedBaron .help(), and requires `
 `True/False` (= 1/0), `and/or/not` ...
 (maybe something I am forgetting).
 
-[`genpyteal`](https://github.com/runvnc/genpyteal)
-
 ## Details
 
 You can use a subset of Python. For scratch variables, you will need to initialize them at the beginning of a function, such as `x = 0` or `s = "tom"`. It uses 
