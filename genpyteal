@@ -325,6 +325,7 @@ def ints(i):
       pass
   except:
     pass
+    return
     
   i.replace(f"Int({i.value})")
 
