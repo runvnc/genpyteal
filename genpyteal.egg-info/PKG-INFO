@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: genpyteal
-Version: 1.0.1
+Version: 2.0.1
 Summary: Generate PyTeal with normal Python
 Home-page: https://github.com/runvnc/genpyteal
 Author: runvnc (Jason Livesay)
@@ -12,7 +12,7 @@ Description: # genpyteal
         Its quite easy to get an error by doing something not supported.  However, it often still outputs useful PyTeal that you can then
         fix up.
         
-        
+        If you appreciate this tool, you are welcome to send ALGOs to `RMONE54GR6CYOJREKZQNFCZAUGJHSPBUJNFRBTXS4NKNQL3NJQIHVCS53M`.
         ## Installation
         
         `pip3 install genpyteal` or `pip install genpyteal`
