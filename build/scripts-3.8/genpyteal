@@ -325,6 +325,7 @@ def ints(i):
       pass
   except:
     pass
+    return
     
   i.replace(f"Int({i.value})")
 
@@ -355,6 +356,7 @@ def stat(s):
   sys.stderr.flush()
 
 def convert(fname):
+  print("genpyteal version 2.1.0")
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
