@@ -5,6 +5,8 @@ import traceback
 import sys
 from collections.abc import Iterable
 
+scratches_added = {}
+
 def iterable(obj):
     return isinstance(obj, Iterable)
     
@@ -50,16 +52,24 @@ def hasScratch(red, varname):
     red.parentdef = parentdef
   if parentdef is None:
     return False
-  s = parentdef.find_all('assign')
-  match = f"{varname} = ScratchVar"
-  if match in s.dumps():
+  if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
     return True
   else:
     return False
+    
+#  s = parentdef.find_all('assign')
+#  match = f"{varname} = ScratchVar"
+#  if match in s.dumps():
+#    return True
+#  else:
+#    return False
 
-def findmap(red, which, how):
+def findmap(red, which, how, def_=None):
   l = red.find_all(which)
-  l.map(how)
+  if True or def_ is None:
+    l.map(how)
+  else:
+    l.map(lambda nd: how(nd, def_))
 
 def decs(d):
   if d.value.dumps() == 'bytes':
@@ -76,13 +86,20 @@ def all(red, x = ''):
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
-      findmap(red, 'assign', assigns)      
+      defnode = None
+      if red.type == 'def': defnode = red
+      stat('assign..')
+      findmap(red, 'assign', assigns, red)      
+      stat('bool..')
       findmap(red, 'boolean_operator', bools)
+      stat('binary_operator..')
       findmap(red, 'binary_operator', concats)
       if hasMulti or red.type == 'while':
-        findmap(red, 'return', returns)
+        stat('return..')
+        findmap(red, 'return..', returns)
       findmap(red, 'int', ints)
       findmap(red, 'string', strings)
+      stat('ifelseblock..')
       findmap(red, 'ifelseblock', ifs)
       if red.type != 'while':      
         findmap(red, 'while', whiles)
@@ -93,20 +110,21 @@ def all(red, x = ''):
     scratch = getScratch(red)
     if hasattr(red,'type') and red.type == 'name':
       return
-    try:      
-      for nd in red:
-        nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
-        if hasMulti:
-          findmap(nodes, 'return', returns)
-        
-        strs = nodes.map(catchdump)
-        strs = strs.filter(lambda x: x != None)
-        strs_.extend(strs)
-    except:
-      if x == 'if':
-        sys.stderr.write('looperr')
-        sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
-        sys.stderr.write(traceback.format_exc())  
+    try:    
+      if not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
+        for nd in red:
+          if not hasattr(nd, 'find_all'): continue
+          nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
+          if hasMulti:
+            findmap(nodes, 'return', returns)
+          
+          strs = nodes.map(catchdump)
+          strs = strs.filter(lambda x: x != None)
+          strs_.extend(strs)
+    except BaseException as err:
+      sys.stderr.write('looperr')
+      sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+      sys.stderr.write(traceback.format_exc())  
       pass
     if len(strs_) > 1:
       strs_ = filter(lambda x: x != '', strs_)
@@ -159,10 +177,15 @@ def concats(ct):
   except:
     pass
 
-def assigns(asn):  
-  if 'ScratchVar' in asn.value.dumps():
+def assigns(asn, parentdef_ = None):  
+  dumps = asn.value.dumps()
+  if 'ScratchVar' in dumps:
     return
-  if asn.parent_find('def') is None:
+  if parentdef_ is None:
+    parentdef = asn.parent_find('def')
+  else:
+    parentdef = parentdef_
+  if parentdef is None:
     return
   #if hasattr(asn, 'asnChecked'):
   #  return
@@ -177,7 +200,8 @@ def assigns(asn):
       if parval.value in ['And', 'Or', 'Not']:
         return
   makescratch = ''
-  is_str = "'" in asn.value.dumps() or '"' in asn.value.dumps()
+  
+  is_str = "'" in dumps or '"' in dumps
   if not hasScratch(asn, asn.target.value):
     if is_str:
       typ = 'TealType.bytes'
@@ -185,6 +209,9 @@ def assigns(asn):
       typ = 'TealType.uint64'
     makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
     asn.insert_before(makescratch)
+    if not parentdef.name in scratches_added:
+      scratches_added[parentdef.name] = {}
+    scratches_added[parentdef.name][asn.target.value] = True
   asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def calls(nd):
@@ -322,24 +349,43 @@ def isSigDef(nd):
     pass
   return False
 
+def stat(s):
+  #sys.stderr.write(f"{s} ")  
+  sys.stderr.write(f".")  
+  sys.stderr.flush()
+
 def convert(fname):
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
   red = RedBaron(source.read())
+  stat('Parsed file..')
   sig = red.filter(isSigDef)
   if sig: 
     mode = 'Signature'
     entry = 'sig'
+    stat('LogicSig')
+  else:
+    stat('Application')
   progroot = red
+
+  stat('prints..')
   findmap(red, 'print', prints)
+  stat('unitary_operator..')
   findmap(red, 'unitary_operator', unitaries)
+  stat('return..')
   findmap(red, 'return', returns)  
+  stat('def..')
   findmap(red, 'def', all)  
+  stat('assign..')
   findmap(red, 'assign', assigns)
+  stat('def..')
   findmap(red, 'def', fixreturns)
+  stat('def..')
   findmap(red, 'def', addreturns)
+  stat('decorator..')
   findmap(red, 'decorator', decs)
+  sys.stderr.write(f"\n")    
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 

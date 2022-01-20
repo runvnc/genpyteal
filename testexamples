@@ -2,7 +2,7 @@
 EXAMPLES="examples/*"
 for ex in $EXAMPLES
 do
-  echo -n "$ex.."
+  echo -n "$ex.."  
   if ! ./genteal >/dev/null $ex 2>&1; then
     echo -e "\e[91m✗\e[39m"
   else
