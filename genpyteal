@@ -5,6 +5,8 @@ import traceback
 import sys
 from collections.abc import Iterable
 
+ABI = False
+
 scratches_added = {}
 
 def iterable(obj):
@@ -51,10 +53,16 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
+    if varname == 'l':
+      sys.stderr.write('exit hascratch because parentdef None\n')
     return False
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
+    if varname == 'l':
+      sys.stderr.write('exit hasscratch because found\n')
     return True
   else:
+    if varname == 'l':
+      sys.stderr.write('exit hasscratch returning false\n')
     return False
     
 #  s = parentdef.find_all('assign')
@@ -208,10 +216,16 @@ def assigns(asn, parentdef_ = None):
     else:
       typ = 'TealType.uint64'
     makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
-    asn.insert_before(makescratch)
+    #asn.insert_before(makescratch)
+    parentdef.insert(0,makescratch)
+    sys.stderr.write(" Added " + asn.target.value + "\n")
+    sys.stderr.write(asn.parent_find('def').dumps())
     if not parentdef.name in scratches_added:
-      scratches_added[parentdef.name] = {}
+      scratches_added[parentdef.name] = {}    
+      
     scratches_added[parentdef.name][asn.target.value] = True
+  else:
+    sys.stderr.write("Already added scratchvar "+asn.target.value)  
   asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def calls(nd):
@@ -313,12 +327,13 @@ def addreturns(d):
 
 def ints(i):
   try:
-    if i.parent.type == 'def_argument':
+    if i.parent.type == 'def_argument' or i.parent.type == 'getitem':
       return
     parname = i.parent.parent.parent.value[0].value
     if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
       return
     try:
+      
       if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
         return
     except:
@@ -342,6 +357,12 @@ def strings(i):
 
 progroot = 0
 
+def abimethod(d):
+  if hasattr(d, 'return_annotation') and d.return_annotation is not None:
+    del d.decorators[0]
+    d.decorators.insert(0,'@staticmethod')
+    d.decorators.insert(1,'@ABIMethod')
+
 def isSigDef(nd):
   try:
     if nd.type == 'def' and nd.name=='sig':
@@ -355,13 +376,53 @@ def stat(s):
   sys.stderr.write(f".")  
   sys.stderr.flush()
 
+def abiapp(red):
+  print("""
+import json
+from typing import Tuple
+
+from pyteal import *
+
+from pytealutils.application import ABIMethod, CreateOnly
+
+globals().update(TealType.__members__)
+
+class StringArray(ABIDynamicArray[Tuple[String]]):
+  pass 
+""")
+
+  print("class ABIApp(CreateOnly):")
+  red.increase_indentation(2)
+  print(red.dumps())
+
+  print("""
+if __name__ == "__main__":
+  app = ABIApp()
+
+  with open("interface.json", "w") as f:
+    f.write(json.dumps(app.get_interface().dictify()))
+
+  print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
+  """)
+
+def usesabi(red):
+  defs_ = red.find_all('def')
+  for nd in defs_:
+    if hasattr(nd, 'return_annotation'):
+      return True
+  return False
+
 def convert(fname):
   sys.stderr.write("genpyteal version 2.2.0\n")
+
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
   red = RedBaron(source.read())
   stat('Parsed file..')
+
+  isabi = usesabi(red)
+    
   sig = red.filter(isSigDef)
   if sig: 
     mode = 'Signature'
@@ -388,6 +449,12 @@ def convert(fname):
   stat('decorator..')
   findmap(red, 'decorator', decs)
   sys.stderr.write(f"\n")    
+
+  if isabi:
+    findmap(red, 'def', abimethod)
+    abiapp(red)
+    return
+    
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 

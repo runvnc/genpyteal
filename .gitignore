@@ -3,3 +3,6 @@ __pycache__/*
 genpyteal.egg-info
 experiments/*
 src/*
+test*.py
+interface.json
+*.teal
