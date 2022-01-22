@@ -53,16 +53,10 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
-    if varname == 'l':
-      sys.stderr.write('exit hascratch because parentdef None\n')
     return False
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
-    if varname == 'l':
-      sys.stderr.write('exit hasscratch because found\n')
     return True
   else:
-    if varname == 'l':
-      sys.stderr.write('exit hasscratch returning false\n')
     return False
     
 #  s = parentdef.find_all('assign')
@@ -218,14 +212,12 @@ def assigns(asn, parentdef_ = None):
     makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
     #asn.insert_before(makescratch)
     parentdef.insert(0,makescratch)
-    sys.stderr.write(" Added " + asn.target.value + "\n")
-    sys.stderr.write(asn.parent_find('def').dumps())
+    
     if not parentdef.name in scratches_added:
       scratches_added[parentdef.name] = {}    
       
     scratches_added[parentdef.name][asn.target.value] = True
-  else:
-    sys.stderr.write("Already added scratchvar "+asn.target.value)  
+    
   asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def calls(nd):
@@ -376,6 +368,19 @@ def stat(s):
   sys.stderr.write(f".")  
   sys.stderr.flush()
 
+
+def dumpglobals(red):
+  gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+  return "\n".join(gs.map(lambda n: n.dumps()))
+
+def dump_nonabi_defs(red):
+  gs = red.find_all('def', lambda v: v.return_annotation is None)
+  return "\n".join(gs.map(lambda n: n.dumps()))
+  
+def dump_abi_defs(red):
+  gs = red.find_all('def', lambda v: v.return_annotation is not None)
+  return "\n".join(gs.map(indent_and_dump))
+
 def abiapp(red):
   print("""
 import json
@@ -391,10 +396,13 @@ class StringArray(ABIDynamicArray[Tuple[String]]):
   pass 
 """)
 
+  print(dumpglobals(red))
+  print(dump_nonabi_defs(red))
+  
   print("class ABIApp(CreateOnly):")
-  red.increase_indentation(2)
-  print(red.dumps())
-
+  red.increase_indentation()
+  print(dump_abi_defs(red))
+  
   print("""
 if __name__ == "__main__":
   app = ABIApp()
@@ -408,7 +416,7 @@ if __name__ == "__main__":
 def usesabi(red):
   defs_ = red.find_all('def')
   for nd in defs_:
-    if hasattr(nd, 'return_annotation'):
+    if hasattr(nd, 'return_annotation') and nd.return_annotation is not None:
       return True
   return False
 
@@ -448,6 +456,8 @@ def convert(fname):
   findmap(red, 'def', addreturns)
   stat('decorator..')
   findmap(red, 'decorator', decs)
+  stat('strings..')
+  findmap(red, 'string', strings)
   sys.stderr.write(f"\n")    
 
   if isabi:
