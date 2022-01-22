@@ -20,6 +20,8 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=["redbaron", "pyteal"],
+    install_requires=["redbaron", 
+      'pyteal-utils'
+    ],
     scripts=['./genpyteal', './genteal', './showast', './niceout', './nicecat']
 )
