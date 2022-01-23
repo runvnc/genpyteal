@@ -85,7 +85,7 @@ class CreateOnly(Application):
     @staticmethod
     @Subroutine(TealType.uint64)
     def optIn() -> Expr:
-        return Reject()
+        return Approve()
 
     @staticmethod
     @Subroutine(TealType.uint64)

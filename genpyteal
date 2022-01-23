@@ -378,8 +378,8 @@ def dump_nonabi_defs(red):
   return "\n".join(gs.map(lambda n: n.dumps()))
   
 def dump_abi_defs(red):
-  gs = red.find_all('def', lambda v: v.return_annotation is not None)
-  return "\n".join(gs.map(indent_and_dump))
+  gs = red.find_all('def', lambda v: not (v.return_annotation is None))
+  return "\n".join(gs.map(lambda n: n.dumps()))
 
 def abiapp(red):
   print("""
@@ -400,7 +400,7 @@ class StringArray(ABIDynamicArray[Tuple[String]]):
   print(dump_nonabi_defs(red))
   
   print("class ABIApp(CreateOnly):")
-  red.increase_indentation()
+  red.increase_indentation(2)
   print(dump_abi_defs(red))
   
   print("""
