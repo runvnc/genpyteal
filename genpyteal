@@ -355,6 +355,12 @@ def abimethod(d):
     d.decorators.insert(0,'@staticmethod')
     d.decorators.insert(1,'@ABIMethod')
 
+def app_ops(d):
+  if d.name in ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']:
+    del d.decorators[0]
+    d.decorators.insert(0,'@staticmethod')
+    d.decorators.insert(1, '@Subroutine(TealType.uint64)')
+
 def isSigDef(nd):
   try:
     if nd.type == 'def' and nd.name=='sig':
@@ -369,16 +375,22 @@ def stat(s):
   sys.stderr.flush()
 
 
+opslist = ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']
+
 def dumpglobals(red):
   gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
   return "\n".join(gs.map(lambda n: n.dumps()))
 
 def dump_nonabi_defs(red):
-  gs = red.find_all('def', lambda v: v.return_annotation is None)
+  gs = red.find_all('def', lambda v: v.return_annotation is None and not (v.name in opslist))
   return "\n".join(gs.map(lambda n: n.dumps()))
   
 def dump_abi_defs(red):
   gs = red.find_all('def', lambda v: not (v.return_annotation is None))
+  return "\n".join(gs.map(lambda n: n.dumps()))
+
+def dump_app_ops(d):
+  gs = d.find_all('def', lambda v: v.name in opslist)
   return "\n".join(gs.map(lambda n: n.dumps()))
 
 def abiapp(red):
@@ -402,6 +414,8 @@ class StringArray(ABIDynamicArray[Tuple[String]]):
   print("class ABIApp(CreateOnly):")
   red.increase_indentation(2)
   print(dump_abi_defs(red))
+
+  print(dump_app_ops(red))
   
   print("""
 if __name__ == "__main__":
@@ -462,6 +476,7 @@ def convert(fname):
 
   if isabi:
     findmap(red, 'def', abimethod)
+    findmap(red, 'def', app_ops)
     abiapp(red)
     return
     

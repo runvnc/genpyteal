@@ -44,6 +44,8 @@ def show(l):
   if l == 'S': printloc(study, study_conn_descr, study_connects)
   return 1
 
+def delete():
+  return 1
 
 def setup_():
   App.globalPut('location', 'Y')
