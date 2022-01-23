@@ -44,6 +44,9 @@ def show(l):
   if l == 'S': printloc(study, study_conn_descr, study_connects)
   return 1
 
+@staticmethod
+def delete() -> Expr:
+  return Approve()
 
 def setup_():
   App.globalPut('location', 'Y')
