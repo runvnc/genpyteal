@@ -408,7 +408,7 @@ if __name__ == "__main__":
   app = ABIApp()
 
   with open("interface.json", "w") as f:
-    f.write(json.dumps(app.get_interface().dictify()))
+    f.write(json.dumps(app.get_interface().dictify(), indent=4))
 
   print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
   """)
