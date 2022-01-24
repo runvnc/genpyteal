@@ -1,3 +1,4 @@
+
 @bytes
 def numtostr(num):
   out = "             "
@@ -11,4 +12,4 @@ def numtostr(num):
     n = n / 10		
     if n == 0: done = True
     i = i + 1
-  return Extract(out, 12 - i + 1, i)
+  return Extract(out, 12 - i + Int(1), i)

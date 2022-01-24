@@ -1,3 +1,5 @@
+from lib import util
+
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgWhite = "\033[38;5;15m"
@@ -34,6 +36,31 @@ note = """
 Welcome to 'Mini-Adventure'. For a list of commands, type /menu.
 You probably already knew that though, or you would not have got to this point.
 """
+
+rndcnt = ScratchVar(uint64)
+hash_ = ScratchVar(bytes)
+
+def init_rnd():
+  ts = ""
+  cm = ""
+  hash__ = ""  
+  ts = Itob( Global.latest_timestamp )
+  cm = Concat(Txn.tx_id, ts )
+  hash__.store( Sha256 ( cm ) )
+  rndcnt = 0
+  return hash__
+
+hash_ = init_rnd()
+
+#bigRand = Btoi( Extract( Bytes(hash.load()), Int(rndcnt), 7+Int(rndcnt)) )
+
+def rnd(mn, mx):
+    somebytes = ""
+    bigRand = 0        
+  	somebytes = Extract( hash_, rndcnt, 7 + rndcnt ) 
+  	bigRand =  Btoi( somebytes )
+  	rndcnt = rndcnt + 1
+  	return mn + bigRand % (mx - mn + 1)
 
 @bytes
 def get_connects(l):
@@ -96,9 +123,30 @@ def exists_item(item, loc):
     return True
   return False
 
+def rolld20():
+  return rnd(1, 20)
+
 def examine_(i):
   if exists_item(i, App.localGet(Txn.sender, 'location')):    
     printitem(i)
+  else:
+    s = ""
+    s = i
+    s = "There is no " + s
+    s = s + " here."
+    print(s)
+  return 1
+
+def use_(item):
+  if item == 'die' or item == 'd20' or item == 'dice':
+    print("Rolling d20...")
+    print(fgYellow)
+    roll = 0
+    roll = rolld20()
+    print("[ " + util.numtostr(roll) + "]")
+    print(resetColor)
+  else:
+    print("You can't use that.")
   return 1
   
 def take_(what):
@@ -135,4 +183,7 @@ def inventory() -> Uint32:
 
 def examine(what: String) -> Uint32:
   return examine_(what)
+
+def use(item: String) -> Uint32:
+  return use_(item)
     

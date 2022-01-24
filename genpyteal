@@ -7,7 +7,7 @@ from collections.abc import Iterable
 
 ABI = False
 
-scratches_added = {}
+scratches_added = {"root":{}}
 
 def iterable(obj):
     return isinstance(obj, Iterable)
@@ -53,19 +53,46 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
+    parentdef = { 'name': 'root'}
+    
+  if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
+    return True
+  else:
+    if varname in scratches_added['root']:
+      return True
+    else:
+      if varname == 'rndcnt':
+        print('Did not find it. parentdef is ', parentdef)
+        print(scratches_added['root'])
+        print('rndcnt' in scratches_added['root'])
+        print(varname in scratches_added['root'])
+      return False
+
+"""
+def hasScratch(red, varname):
+  parentdef = None
+  if hasattr(red, 'parentdef'):
+    parentdef = red.parentdef
+  else:
+    parentdef = red.parent_find('def')
+    red.parentdef = parentdef
+  if parentdef is None:
     return False
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
     return True
   else:
+    gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+    vars = 
     return False
-    
-#  s = parentdef.find_all('assign')
-#  match = f"{varname} = ScratchVar"
-#  if match in s.dumps():
-#    return True
-#  else:
-#    return False
+"""
 
+def add_root_scratches(red):
+  gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+  for nd in gs:
+    if 'ScratchVar' in gs.dumps():
+      scratches_added['root'][nd.name] = True
+  print(scratches_added)
+    
 def findmap(red, which, how, def_=None):
   l = red.find_all(which)
   if True or def_ is None:
@@ -266,7 +293,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'application_args']:
+                               'group_size', 'application_args', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -322,16 +349,20 @@ def ints(i):
   try:
     if i.parent.type == 'def_argument' or i.parent.type == 'getitem':
       return
-    parname = i.parent.parent.parent.value[0].value
-    if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
-      return
-    try:
-      
-      if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+    if hasattr(i.parent.parent.parent, 'value') and hasattr(i.parent.parent.parent.value, 'pop'):
+      parname = i.parent.parent.parent.value[0].value
+      if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
         return
+    try:      
+      if hasattr(i.parent.parent, 'value') and hasattr(i.parent.parent.value, 'pop'):
+        if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+          return
     except:
       pass
-  except:
+  except BaseException as err:
+    sys.stderr.write(' int outer exception ' + i.dumps())
+    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(traceback.format_exc())      
     pass
     return
     
@@ -409,8 +440,8 @@ class StringArray(ABIDynamicArray[Tuple[String]]):
   pass 
 """)
 
-  print(dumpglobals(red))
   print(dump_nonabi_defs(red))
+  print(dumpglobals(red))
   
   print("class ABIApp(CreateOnly):")
   red.increase_indentation(2)
@@ -455,10 +486,13 @@ def convert(fname):
     stat('Application')
   progroot = red
 
+  add_root_scratches(red)
+
   findmap(red, 'binary_operator', concats)
 
   stat('prints..')
   findmap(red, 'print', prints)
+  findmap(red, 'name', names)
   stat('unitary_operator..')
   findmap(red, 'unitary_operator', unitaries)
   stat('return..')
