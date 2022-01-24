@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 import json
 from redbaron import RedBaron
 import traceback
@@ -174,8 +174,7 @@ def concats(ct):
   if ct.first.type == 'string' or ct.second.type == 'string':
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
-    if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 
-       ct.first.value[0].value == 'Concat' or ct.second.value[0].value == 'Concat'):
+    if ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes':
       ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")  
   except:
     pass
@@ -454,8 +453,6 @@ def convert(fname):
   else:
     stat('Application')
   progroot = red
-
-  findmap(red, 'binary_operator', concats)
 
   stat('prints..')
   findmap(red, 'print', prints)
