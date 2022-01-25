@@ -1,0 +1,12 @@
+#!/bin/env python3
+import sys
+
+with open(sys.argv[1],"r") as f:
+  s = f.read()
+  lines = s.splitlines()
+  for l in lines:
+    commstart = l.find("//")
+    if commstart >=0:
+      print(l[0:commstart])
+    else:
+      print(l)

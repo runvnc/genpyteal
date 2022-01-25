@@ -1,34 +1,49 @@
-from pyteal import *
+#from pyteal import *
+from pyteal import (TealType, Int,Bytes)
 
-globals().update(TealType.__members__)
+#globals().update(TealType.__members__)
 
-hash_ = ScratchVar(bytes, 40)
-s1 = ScratchVar(bytes)
-ts = ScratchVar(bytes)
-ts.store(Itob( Global.latest_timestamp() ) )
-cm = ScratchVar(bytes)
-cm.store( Concat(Txn.tx_id(), ts.load()) )
-hash_.store( Sha256 ( cm.load() ) )
+from typing import Tuple
+from pytealutils.abi import ABIDynamicArray
 
-rndcnt = ScratchVar(uint64, 42)
-rndcnt.store(Int(0))
+class StringArray(ABIDynamicArray[Tuple[String]]):
+    pass
 
-#bigRand = Btoi( Extract( Bytes(hash.load()), Int(rndcnt), 7+Int(rndcnt)) )
 @Subroutine(uint64)
-def rnd(mn, mx):
-    hash = ScratchVar(bytes, 40)
-    rndcnt = ScratchVar(TealType.uint64, 42)
-    somebytes = ScratchVar(TealType.bytes)
-    bigRand = ScratchVar(TealType.uint64)
-    
+def arr_del(str_arr, to_remove):
+    i = ScratchVar(TealType.uint64)
+    new_arr = ScratchVar(TealType.uint64)
     return  Seq([
-      rndcnt.store(Int(0)),
-    	bigRand.store(Int(0)),
-    	somebytes.store(Bytes("")),
-    	somebytes.store(Extract( hash_.load(), rndcnt.load(), Int(7) + rndcnt.load() ) ),
-    	bigRand.store( Btoi( somebytes.load() ) ),
+    	new_arr.store(StringArray()),
+    	i.store(Int(0)),
+    	While( i.load() < to_remove).Do(
+          Seq([
+    	     newlist.append(str_arr[i.load()]),
+    	     i.store(i.load() + Int(1)) ])
+       ),
+    	i.store(i.load() + Int(1)),
+    	While( i.load() < str_arr.size.load()).Do(
+          Seq([
+    	     newlist.append(str_arr[i.load()]),
+    	     i.store(i.load() + Int(1)) ])
+       ),
+    	Return( new_arr.load() ) ])
+
+
+@Subroutine(uint64)
+def rnd(min_, max_):
+    bigRand = ScratchVar(TealType.uint64)
+    rndcnt = ScratchVar(TealType.uint64)
+    hash_ = ScratchVar(TealType.bytes)
+    return  Seq([
+    	hash_.store(Bytes("")),
+    	rndcnt.store(Int(0)),
+    	rndcnt.store(App.globalGet(Bytes('rndcnt'))),
+    	hash_.store(Sha256(Concat(Txn.tx_id(), Itob(Global.latest_timestamp())))),
+    	bigRand.store(Btoi(Extract(hash_.load() ,rndcnt.load(), Int(7))) + Global.latest_timestamp() % Int(100000)),
     	rndcnt.store(rndcnt.load() + Int(1)),
-    	Return( mn + bigRand.load() % (mx - mn + Int(1)) ) ])
+    	App.globalPut(Bytes('rndcnt'), rndcnt.load()),
+    	Return( min_ + bigRand.load() % (max_ - min_ + Int(1)) ) ])
 
 
 

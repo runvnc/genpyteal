@@ -4,6 +4,7 @@ from redbaron import RedBaron
 import traceback
 import sys
 from collections.abc import Iterable
+import os
 
 ABI = False
 
@@ -61,37 +62,13 @@ def hasScratch(red, varname):
     if varname in scratches_added['root']:
       return True
     else:
-      if varname == 'rndcnt':
-        print('Did not find it. parentdef is ', parentdef)
-        print(scratches_added['root'])
-        print('rndcnt' in scratches_added['root'])
-        print(varname in scratches_added['root'])
       return False
-
-"""
-def hasScratch(red, varname):
-  parentdef = None
-  if hasattr(red, 'parentdef'):
-    parentdef = red.parentdef
-  else:
-    parentdef = red.parent_find('def')
-    red.parentdef = parentdef
-  if parentdef is None:
-    return False
-  if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
-    return True
-  else:
-    gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
-    vars = 
-    return False
-"""
 
 def add_root_scratches(red):
   gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
   for nd in gs:
-    if 'ScratchVar' in gs.dumps():
-      scratches_added['root'][nd.name] = True
-  print(scratches_added)
+    if 'ScratchVar' in nd.dumps():
+      scratches_added['root'][str(nd.name)] = True
     
 def findmap(red, which, how, def_=None):
   l = red.find_all(which)
@@ -440,8 +417,8 @@ class StringArray(ABIDynamicArray[Tuple[String]]):
   pass 
 """)
 
-  print(dump_nonabi_defs(red))
   print(dumpglobals(red))
+  print(dump_nonabi_defs(red))
   
   print("class ABIApp(CreateOnly):")
   red.increase_indentation(2)
