@@ -6,39 +6,8 @@ from pyteal import *
 
 from pytealutils import abi
 
-@bytes
-def lgets(key):
-  maybe = App.localGetEx(0, 0, key)
-  maybe
-  if maybe.hasValue():
-    return maybe.value()
-  else:
-    return ""
+from libex import *
 
-@bytes
-def ggets(key):
-  maybe
-  maybe = App.globalGetEx(0, key)
-  if maybe.hasValue():
-    return maybe.value()
-  else:
-    return ""
-
-def lgeti(key):
-  maybe = App.localGetEx(0, 0, key)
-  maybe
-  if maybe.hasValue():
-    return maybe.value()
-  else:
-    return 0
-
-def ggeti(key):
-  maybe = App.globalGetEx(0, key)
-  maybe
-  if maybe.hasValue():
-    return maybe.value()
-  else:
-    return 0
 
 StringArray = abi.DynamicArray[abi.String]
 

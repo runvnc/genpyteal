@@ -40,7 +40,6 @@ def getScratch(red):
   
   s2 = red.find_all('name')
   #if isinstance(s2, list):
-  sys.stderr.write('filtering s2')
   s2 = s2.filter(lambda x: x.dumps() == 'maybe')
   #else:
   #  sys.stderr.write('not filtering s2')
@@ -268,8 +267,11 @@ def names(nd):
   if t:
     t.replace('Int(1)')
     return
+  m = nd.find('name', lambda n: n.value=='maybe')
+  if m:
+    return
     
-  if nd.dumps()+'.load()' in nd.parent.dumps():
+  if nd.dumps()+'.load()' in nd.parent.dumps() or 'maybe' in nd.parent.dumps():
     return
   if nd.dumps()+'.store(' in nd.parent.dumps():
     return
@@ -475,8 +477,7 @@ def simpleReplaces(source):
   source = source.replace('len(', 'Len(')
   source = source.replace('lput(', 'App.localPut(0,')
   source = source.replace('gput(', 'App.globalPut(')
-  while "    maybe\n    maybe\n" in source:
-    source = source.replace("    maybe\n    maybe\n", "    maybe\n")
+  
   return source
 
 def convert(fname):

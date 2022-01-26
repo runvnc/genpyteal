@@ -10,58 +10,7 @@ from pyteal import *
 
 from pytealutils import abi
 
-
-@Subroutine(TealType.bytes)
-def lgets(key):
-    maybe = App.localGetEx(Int(0), Int(0), key)
-    maybe
-    return  Seq(
-    	maybe.load(),
-    	If( maybe.load().hasValue(), 
-          Return( maybe.load().value() )
-        , 
-          Return( Bytes("") )
-       ) )
-
-
-
-@Subroutine(TealType.bytes)
-def ggets(key):
-    maybe = App.globalGetEx(Int(0), key)
-    maybe
-    return  Seq(
-    	maybe.load(),
-    	If( maybe.load().hasValue(), 
-          Return( maybe.load().value() )
-        , 
-          Return( Bytes("") )
-       ) )
-
-
-@Subroutine(uint64)
-def lgeti(key):
-    maybe = App.localGetEx(Int(0), Int(0), key)
-    maybe
-    return  Seq(
-    	maybe.load(),
-    	If( maybe.load().hasValue(), 
-          Return( maybe.load().value() )
-        , 
-          Return( Int(0) )
-       ) )
-
-
-@Subroutine(uint64)
-def ggeti(key):
-    maybe = App.globalGetEx(Int(0), key)
-    maybe
-    return  Seq(
-    	maybe.load(),
-    	If( maybe.load().hasValue(), 
-          Return( maybe.load().value() )
-        , 
-          Return( Int(0) )
-       ) )
+from .libex import *
 
 
 StringArray = abi.DynamicArray[abi.String]
