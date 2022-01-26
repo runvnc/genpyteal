@@ -1,13 +1,15 @@
-#from pyteal import *
-from pyteal import (TealType, Int,Bytes)
+from pyteal import *
 
-#globals().update(TealType.__members__)
+globals().update(TealType.__members__)
 
 from typing import Tuple
-from pytealutils.abi import ABIDynamicArray
 
-class StringArray(ABIDynamicArray[Tuple[String]]):
-    pass
+from pyteal import *
+
+from pytealutils import *
+
+StringArray = abi.DynamicArray[abi.String]
+
 
 @Subroutine(uint64)
 def arr_del(str_arr, to_remove):

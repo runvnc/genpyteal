@@ -248,6 +248,7 @@ class DynamicArray(Generic[T]):
         self.lengths = ScratchVar(TealType.bytes)
 
         self.value = data
+        self.init()
 
     def init(self) -> Expr:
         return (
@@ -303,7 +304,6 @@ class DynamicArray(Generic[T]):
             return Assert(Int(0))
         else:
             return Assert(Int(0))
-   
 
     def serialize(self) -> Bytes:
         return Concat(

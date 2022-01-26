@@ -1,8 +1,11 @@
 from typing import Tuple
-from pytealutils.abi import ABIDynamicArray
 
-class StringArray(ABIDynamicArray[Tuple[String]]):
-    pass
+from pyteal import *
+
+from pytealutils import *
+
+StringArray = abi.DynamicArray[abi.String]
+
 
 def arr_del(str_arr, to_remove):
   new_arr = StringArray()
@@ -40,3 +43,5 @@ def numtostr(num):
     if n == 0: done = True
     i = i + 1
   return Extract(out, 12 - i + Int(1), i)
+
+

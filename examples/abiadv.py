@@ -20,17 +20,13 @@ study_connects = "WL"
 study_conn_descr = "To the west is the living room."  
 
 computer = """The screen shows the following:
-\033[38;5;2m
-
-CP/M COLD BOOT
-TARBELL 63K CPM V1.3 of 8-13-77
-2-DRIVE VERSION
-HOW MANY DISKS? 2
-
-A>dir
-A: MOVCPM   COM
-A: SYSGEN   COM
-A: ASM      COM"""
+\033[38;2;138;226;52m[48;2;0;21;0m
+A>dir                             
+A: MOVCPM   COM  
+A: ASMAVM   COM  
+A: CHIP8    COM  
+\033[0m
+"""
 
 note = """
 Welcome to 'Mini-Adventure'. For a list of commands, type /menu.
@@ -118,7 +114,7 @@ def use_(item):
     print(fgYellow)
     roll = 0
     roll = rolld20()
-    print("[ " + util.numtostr(roll) + "]")
+    print("[ " + util.numtostr(roll) + " ]")
     print(resetColor)
   else:
     print("You can't use that.")

@@ -186,6 +186,10 @@ def concats(ct):
 
 def assigns(asn, parentdef_ = None):  
   dumps = asn.value.dumps()
+  if 'StringArray' in dumps:
+    asn.replace(f"{asn.dumps}\n{asn.taget.value}.init()")
+    return
+  
   if 'ScratchVar' in dumps:
     return
   if parentdef_ is None:
@@ -194,10 +198,7 @@ def assigns(asn, parentdef_ = None):
     parentdef = parentdef_
   if parentdef is None:
     return
-  #if hasattr(asn, 'asnChecked'):
-  #  return
   parval = asn.value
-  #asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
   if hasattr(parval, 'type'):  
@@ -260,7 +261,7 @@ def names(nd):
   varname = nd.dumps()
 
   try:
-    if hasScratch(nd, varname):
+    if hasScratch(nd, varname) or varname == 'size':
       nd.replace(f"{nd.dumps()}.load()")
     else:
       try:
@@ -409,18 +410,17 @@ from typing import Tuple
 
 from pyteal import *
 
-from pytealutils.application import ABIMethod, CreateOnly
+from pytealutils.applications import ABIMethod, DefaultApprove
+from pytealutils import abi
 
 globals().update(TealType.__members__)
 
-class StringArray(ABIDynamicArray[Tuple[String]]):
-  pass 
 """)
 
   print(dumpglobals(red))
   print(dump_nonabi_defs(red))
   
-  print("class ABIApp(CreateOnly):")
+  print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
   print(dump_abi_defs(red))
 
@@ -442,6 +442,14 @@ def usesabi(red):
     if hasattr(nd, 'return_annotation') and nd.return_annotation is not None:
       return True
   return False
+
+def simpleReplaces(source):
+  source = source.replace('len(', 'Len(')
+  source = source.replace('lput(', 'App.localPut(0,')
+  source = source.replace('lget(', 'App.localGet(0,')
+  source = source.replace('gput(', 'App.globalPut(')
+  source = source.replace('gget(', 'App.globalGet(')  
+  return source
 
 def convert(fname):
   sys.stderr.write("genpyteal version 2.2.0\n")

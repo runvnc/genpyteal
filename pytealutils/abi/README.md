@@ -75,3 +75,5 @@ Each PyTEAL ABIType, it must implement encode/decode to convert to and from over
     Stack type      - bytes
     Access Methods  - extract(b: bytes, start: uint64, len: uint64)bytes | extract_uint{16|32|64}(b: bytes, start: uint64)uint64  
     Example Encoded - [0x02,0x05,0x00,0x01,0x41,0x00,0x04] represents the Tuple(string, uint16) of ["A",4]
+
+    
