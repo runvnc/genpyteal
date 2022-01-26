@@ -5,6 +5,7 @@ import traceback
 import sys
 from collections.abc import Iterable
 import os
+import re
 
 ABI = False
 
@@ -36,6 +37,7 @@ def getScratch(red):
   s = red.find_all('assign')
   if isinstance(s, list):
     s = s.filter(lambda x: 'ScratchVar' in x)
+  s2 = red.find_all('atomtrailers')
   if s:
     return '\n'.join(s.map(lambda x: x.dumps()))
   else:
@@ -144,10 +146,15 @@ def all(red, x = ''):
         retstr = f"{scratch}\nreturn "
       red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
       red.value = removeblanks(red.value.dumps())
-    elif len(strs_) == 1:
+
+      #####
+    # elif len(strs_) == 1:
       #if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
-      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):      
-        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
+
+      ########################3
+      
+      #if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):      
+      #  red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -185,12 +192,8 @@ def concats(ct):
     pass
 
 def assigns(asn, parentdef_ = None):  
-  dumps = asn.value.dumps()
-  if 'StringArray' in dumps:
-    asn.replace(f"{asn.dumps}\n{asn.taget.value}.init()")
-    return
-  
-  if 'ScratchVar' in dumps:
+  dumps = asn.value.dumps()  
+  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps:
     return
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -403,6 +406,10 @@ def dump_app_ops(d):
   gs = d.find_all('def', lambda v: v.name in opslist)
   return "\n".join(gs.map(lambda n: n.dumps()))
 
+def dropReturns(currsource):
+  newsource = re.sub(r'Return(\([\s\S]*\))', r'\1 ', currsource)
+  return newsource
+
 def abiapp(red):
   print("""
 import json
@@ -418,11 +425,13 @@ globals().update(TealType.__members__)
 """)
 
   print(dumpglobals(red))
-  print(dump_nonabi_defs(red))
+
+  
+  print(dropReturns(dump_nonabi_defs(red)))
   
   print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
-  print(dump_abi_defs(red))
+  print(dropReturns(dump_abi_defs(red)))
 
   print(dump_app_ops(red))
   
@@ -457,7 +466,9 @@ def convert(fname):
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
-  red = RedBaron(source.read())
+  source = source.read()
+  source = simpleReplaces(source)
+  red = RedBaron(source)
   stat('Parsed file..')
 
   isabi = usesabi(red)
@@ -501,11 +512,13 @@ def convert(fname):
     findmap(red, 'def', app_ops)
     abiapp(red)
     return
+
     
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(red.dumps())
+  print(dropReturns(red.dumps()))
+  
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 
 convert(sys.argv[1])

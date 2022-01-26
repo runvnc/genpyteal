@@ -15,18 +15,21 @@ from lib.util import *
 
 
 
-@Subroutine(TealType.none)
-def show_inventory():
+
+
+@Subroutine(uint64)
+def show_inventory_():
     i = ScratchVar(TealType.uint64)
     inv = StringArray(App.localGet(Int(0),Bytes('inventory')))
     return  Seq([
-      inv.init(),
+    	inv.init(),
     	i.store(Int(0)),
     	While( i.load() < inv.size.load()).Do(
-          Seq([          
+          Seq([
     	     Log(inv[i.load()]),
     	     i.store(i.load() + Int(1)) ])
-     ) ])
+       ),
+    	Return( Int(1) ) ])
 
 
 
@@ -36,9 +39,8 @@ class ABIApp(DefaultApprove):
   @ABIMethod
   def init() -> abi.Uint32:
       inv = StringArray(Bytes(""))
-      
       return  Seq([
-        inv.init(),
+    	  inv.init(),
     	  App.localPut(Int(0),Bytes('inventory'), inv.serialize()),
     	  Int(1) ])
 
@@ -56,12 +58,19 @@ class ABIApp(DefaultApprove):
   @ABIMethod
   def pickup(item: String) -> abi.Uint32:
       inv = StringArray(App.localGet(Int(0),Bytes('inventory')))
-      
       return  Seq([
-        inv.init(),
+    	  inv.init(),
     	  inv.append(item),
-    	  show_inventory(),
-    	  Int(1) ])
+    	  Return( show_inventory_() ) ])
+
+
+  
+
+  @staticmethod
+  @ABIMethod
+  def show_inventory() -> abi.Uint32:
+    return ( show_inventory_() )
+
 
 
 

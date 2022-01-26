@@ -1,2 +1,2 @@
 #!/bin/bash
-genpyteal $1 $2 $3 | python3
+./genpyteal $1 $2 $3 | python3

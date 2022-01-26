@@ -4,10 +4,11 @@ from redbaron import RedBaron
 import traceback
 import sys
 from collections.abc import Iterable
+import os
 
 ABI = False
 
-scratches_added = {}
+scratches_added = {"root":{}}
 
 def iterable(obj):
     return isinstance(obj, Iterable)
@@ -35,6 +36,7 @@ def getScratch(red):
   s = red.find_all('assign')
   if isinstance(s, list):
     s = s.filter(lambda x: 'ScratchVar' in x)
+  s2 = red.find_all('atomtrailers')
   if s:
     return '\n'.join(s.map(lambda x: x.dumps()))
   else:
@@ -53,19 +55,22 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
-    return False
+    parentdef = { 'name': 'root'}
+    
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
     return True
   else:
-    return False
-    
-#  s = parentdef.find_all('assign')
-#  match = f"{varname} = ScratchVar"
-#  if match in s.dumps():
-#    return True
-#  else:
-#    return False
+    if varname in scratches_added['root']:
+      return True
+    else:
+      return False
 
+def add_root_scratches(red):
+  gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+  for nd in gs:
+    if 'ScratchVar' in nd.dumps():
+      scratches_added['root'][str(nd.name)] = True
+    
 def findmap(red, which, how, def_=None):
   l = red.find_all(which)
   if True or def_ is None:
@@ -174,14 +179,15 @@ def concats(ct):
   if ct.first.type == 'string' or ct.second.type == 'string':
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
-    if ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes':
+    if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 
+       ct.first.value[0].value == 'Concat' or ct.second.value[0].value == 'Concat'):
       ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")  
   except:
     pass
 
 def assigns(asn, parentdef_ = None):  
-  dumps = asn.value.dumps()
-  if 'ScratchVar' in dumps:
+  dumps = asn.value.dumps()  
+  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps:
     return
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -189,10 +195,7 @@ def assigns(asn, parentdef_ = None):
     parentdef = parentdef_
   if parentdef is None:
     return
-  #if hasattr(asn, 'asnChecked'):
-  #  return
   parval = asn.value
-  #asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
   if hasattr(parval, 'type'):  
@@ -255,7 +258,7 @@ def names(nd):
   varname = nd.dumps()
 
   try:
-    if hasScratch(nd, varname):
+    if hasScratch(nd, varname) or varname == 'size':
       nd.replace(f"{nd.dumps()}.load()")
     else:
       try:
@@ -265,7 +268,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'application_args']:
+                               'group_size', 'application_args', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -321,16 +324,20 @@ def ints(i):
   try:
     if i.parent.type == 'def_argument' or i.parent.type == 'getitem':
       return
-    parname = i.parent.parent.parent.value[0].value
-    if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
-      return
-    try:
-      
-      if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+    if hasattr(i.parent.parent.parent, 'value') and hasattr(i.parent.parent.parent.value, 'pop'):
+      parname = i.parent.parent.parent.value[0].value
+      if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
         return
+    try:      
+      if hasattr(i.parent.parent, 'value') and hasattr(i.parent.parent.value, 'pop'):
+        if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+          return
     except:
       pass
-  except:
+  except BaseException as err:
+    sys.stderr.write(' int outer exception ' + i.dumps())
+    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(traceback.format_exc())      
     pass
     return
     
@@ -400,18 +407,17 @@ from typing import Tuple
 
 from pyteal import *
 
-from pytealutils.application import ABIMethod, CreateOnly
+from pytealutils.applications import ABIMethod, DefaultApprove
+from pytealutils import abi
 
 globals().update(TealType.__members__)
 
-class StringArray(ABIDynamicArray[Tuple[String]]):
-  pass 
 """)
 
   print(dumpglobals(red))
   print(dump_nonabi_defs(red))
   
-  print("class ABIApp(CreateOnly):")
+  print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
   print(dump_abi_defs(red))
 
@@ -434,13 +440,23 @@ def usesabi(red):
       return True
   return False
 
+def simpleReplaces(source):
+  source = source.replace('len(', 'Len(')
+  source = source.replace('lput(', 'App.localPut(0,')
+  source = source.replace('lget(', 'App.localGet(0,')
+  source = source.replace('gput(', 'App.globalPut(')
+  source = source.replace('gget(', 'App.globalGet(')  
+  return source
+
 def convert(fname):
   sys.stderr.write("genpyteal version 2.2.0\n")
 
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
-  red = RedBaron(source.read())
+  source = source.read()
+  source = simpleReplaces(source)
+  red = RedBaron(source)
   stat('Parsed file..')
 
   isabi = usesabi(red)
@@ -454,8 +470,13 @@ def convert(fname):
     stat('Application')
   progroot = red
 
+  add_root_scratches(red)
+
+  findmap(red, 'binary_operator', concats)
+
   stat('prints..')
   findmap(red, 'print', prints)
+  findmap(red, 'name', names)
   stat('unitary_operator..')
   findmap(red, 'unitary_operator', unitaries)
   stat('return..')

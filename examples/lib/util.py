@@ -2,10 +2,11 @@ from typing import Tuple
 
 from pyteal import *
 
-from pytealutils import *
+#from pytealutils import *
+
+from pytealutils import abi
 
 StringArray = abi.DynamicArray[abi.String]
-
 
 def arr_del(str_arr, to_remove):
   new_arr = StringArray()

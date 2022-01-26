@@ -6,17 +6,17 @@ from typing import Tuple
 
 from pyteal import *
 
-from pytealutils import *
+#from pytealutils import *
+
+from pytealutils import abi
 
 StringArray = abi.DynamicArray[abi.String]
-
 
 @Subroutine(uint64)
 def arr_del(str_arr, to_remove):
     i = ScratchVar(TealType.uint64)
-    new_arr = ScratchVar(TealType.uint64)
+    new_arr = StringArray()
     return  Seq([
-    	new_arr.store(StringArray()),
     	i.store(Int(0)),
     	While( i.load() < to_remove).Do(
           Seq([
@@ -29,7 +29,7 @@ def arr_del(str_arr, to_remove):
     	     newlist.append(str_arr[i.load()]),
     	     i.store(i.load() + Int(1)) ])
        ),
-    	Return( new_arr.load() ) ])
+    	Return( new_arr ) ])
 
 
 @Subroutine(uint64)

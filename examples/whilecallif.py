@@ -1,11 +1,11 @@
-from lib import util
+from lib.util import *
 
 def proc(n):
   return n * 2
 
 def acceptable(n, target):
   if n >= target:
-    print("Acceptable. Diff is " + util.numtostr(n - target))
+    print("Acceptable. Diff is " + numtostr(n - target))
     return True
   else:
     return False
