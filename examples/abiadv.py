@@ -1,4 +1,4 @@
-from lib import util
+from lib.util import *
 
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
@@ -46,11 +46,10 @@ def move_(location, direction):
   i = 0
   l = 0
   d = 0
-  l = Len(connects)
-  while i < l:
+  while i < Len(connects):
     if Extract(connects, i, 1) == direction:
-      App.localPut(0, 'location', Extract(connects, i + 1, 1))
-      d = show(App.localGet(0, 'location'))
+      lput('location', Extract(connects, i + 1, 1))
+      d = show(lget('location'))
       return True
     i = i + 2
       
@@ -77,7 +76,7 @@ def show(l):
 def inventory_():  
   print("You are carrying:")
   print(fgYellow)
-  print(App.localGet(Txn.sender, 'inventory'))
+  print(lget('inventory'))
   print(resetColor)
   return 1
 
@@ -95,10 +94,10 @@ def exists_item(item, loc):
   return False
 
 def rolld20():
-  return util.rnd(1, 20)
+  return rnd(1, 20)
 
 def examine_(i):
-  if exists_item(i, App.localGet(Txn.sender, 'location')):    
+  if exists_item(i, lget('location')):    
     printitem(i)
   else:
     s = ""
@@ -114,7 +113,7 @@ def use_(item):
     print(fgYellow)
     roll = 0
     roll = rolld20()
-    print("[ " + util.numtostr(roll) + " ]")
+    print("[ " + numtostr(roll) + " ]")
     print(resetColor)
   else:
     print("You can't use that.")
@@ -122,29 +121,28 @@ def use_(item):
   
 def take_(what):
   curr = ""
-  curr = App.localGet(Txn.sender, 'inventory')
-  App.localPut(Txn.sender, 'inventory', curr + "\n" + what)
+  curr = lget('inventory')
+  lput('inventory', curr + "\n" + what)
   return 1
 
-
 def setup_():
-  App.localPut(0, 'location', 'Y')
-  App.localPut(0, 'inventory', "note")
+  lput('location', 'Y')
+  lput('inventory', "note")
   return 1
 
 def look() -> abi.Uint32:
-  return show(App.localGet(0, 'location'))
+  return show(lget('location'))
 
 def setup() -> abi.Uint32:
   return setup_()
 
 def move(dir: String) -> abi.Uint32:
-  return move_(App.localGet(0, 'location'), dir)
+  return move_(lget('location'), dir)
 
 def take(what: String) -> abi.Uint32:
   return take_(what)
 
-def inventory() -> Uint32:
+def inventory() -> abi.Uint32:
   return inventory_()
 
 def examine(what: String) -> abi.Uint32:
