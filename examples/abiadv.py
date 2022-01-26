@@ -49,7 +49,7 @@ def move_(location, direction):
   while i < Len(connects):
     if Extract(connects, i, 1) == direction:
       lput('location', Extract(connects, i + 1, 1))
-      d = show(lget('location'))
+      d = show(lgets('location'))
       return True
     i = i + 2
       
@@ -76,7 +76,7 @@ def show(l):
 def inventory_():  
   print("You are carrying:")
   print(fgYellow)
-  print(lget('inventory'))
+  print(lgets('inventory'))
   print(resetColor)
   return 1
 
@@ -97,7 +97,7 @@ def rolld20():
   return rnd(1, 20)
 
 def examine_(i):
-  if exists_item(i, lget('location')):    
+  if exists_item(i, lgets('location')):    
     printitem(i)
   else:
     s = ""
@@ -121,7 +121,7 @@ def use_(item):
   
 def take_(what):
   curr = ""
-  curr = lget('inventory')
+  curr = lgets('inventory')
   lput('inventory', curr + "\n" + what)
   return 1
 
@@ -131,13 +131,13 @@ def setup_():
   return 1
 
 def look() -> abi.Uint32:
-  return show(lget('location'))
+  return show(lgets('location'))
 
 def setup() -> abi.Uint32:
   return setup_()
 
 def move(dir: String) -> abi.Uint32:
-  return move_(lget('location'), dir)
+  return move_(lgets('location'), dir)
 
 def take(what: String) -> abi.Uint32:
   return take_(what)

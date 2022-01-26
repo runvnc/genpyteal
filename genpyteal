@@ -37,9 +37,19 @@ def getScratch(red):
   s = red.find_all('assign')
   if isinstance(s, list):
     s = s.filter(lambda x: 'ScratchVar' in x)
-  s2 = red.find_all('atomtrailers')
-  if s:
-    return '\n'.join(s.map(lambda x: x.dumps()))
+  
+  s2 = red.find_all('name')
+  #if isinstance(s2, list):
+  sys.stderr.write('filtering s2')
+  s2 = s2.filter(lambda x: x.dumps() == 'maybe')
+  #else:
+  #  sys.stderr.write('not filtering s2')
+  if s or s2:
+    s3 = []
+    if s: s3 = s
+    if s2: 
+      s3 = s3 + s2
+    return '\n'.join(s3.map(lambda x: x.dumps()))
   else:
     return ''
 
@@ -64,7 +74,10 @@ def hasScratch(red, varname):
     if varname in scratches_added['root']:
       return True
     else:
-      return False
+      if varname == 'maybe':
+        return '\nmaybe\n' not in parentdef.dumps()
+      else:
+        return False
 
 def add_root_scratches(red):
   gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
@@ -154,7 +167,7 @@ def all(red, x = ''):
       ########################3
       
       if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):              
-        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
+        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return').replace('maybe\n  maybe','maybe\n')
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -193,7 +206,7 @@ def concats(ct):
 
 def assigns(asn, parentdef_ = None):  
   dumps = asn.value.dumps()  
-  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps:
+  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps or 'maybe' in asn.target.dumps():
     return
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -433,7 +446,7 @@ globals().update(TealType.__members__)
   print(dumpglobals(red))
 
   
-  print(dropReturns(dump_nonabi_defs(red)))
+  print(simpleReplaces(dropReturns(dump_nonabi_defs(red))))
   
   print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
@@ -461,9 +474,9 @@ def usesabi(red):
 def simpleReplaces(source):
   source = source.replace('len(', 'Len(')
   source = source.replace('lput(', 'App.localPut(0,')
-  source = source.replace('lget(', 'App.localGet(0,')
   source = source.replace('gput(', 'App.globalPut(')
-  source = source.replace('gget(', 'App.globalGet(')  
+  while "    maybe\n    maybe\n" in source:
+    source = source.replace("    maybe\n    maybe\n", "    maybe\n")
   return source
 
 def convert(fname):
@@ -524,7 +537,7 @@ def convert(fname):
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(dropReturns(red.dumps()))
+  print(simpleReplaces(dropReturns(red.dumps())))
   
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 

@@ -10,26 +10,80 @@ from pyteal import *
 
 from pytealutils import abi
 
+
+@Subroutine(TealType.bytes)
+def lgets(key):
+    maybe = App.localGetEx(Int(0), Int(0), key)
+    maybe
+    return  Seq(
+    	maybe.load(),
+    	If( maybe.load().hasValue(), 
+          Return( maybe.load().value() )
+        , 
+          Return( Bytes("") )
+       ) )
+
+
+
+@Subroutine(TealType.bytes)
+def ggets(key):
+    maybe = App.globalGetEx(Int(0), key)
+    maybe
+    return  Seq(
+    	maybe.load(),
+    	If( maybe.load().hasValue(), 
+          Return( maybe.load().value() )
+        , 
+          Return( Bytes("") )
+       ) )
+
+
+@Subroutine(uint64)
+def lgeti(key):
+    maybe = App.localGetEx(Int(0), Int(0), key)
+    maybe
+    return  Seq(
+    	maybe.load(),
+    	If( maybe.load().hasValue(), 
+          Return( maybe.load().value() )
+        , 
+          Return( Int(0) )
+       ) )
+
+
+@Subroutine(uint64)
+def ggeti(key):
+    maybe = App.globalGetEx(Int(0), key)
+    maybe
+    return  Seq(
+    	maybe.load(),
+    	If( maybe.load().hasValue(), 
+          Return( maybe.load().value() )
+        , 
+          Return( Int(0) )
+       ) )
+
+
 StringArray = abi.DynamicArray[abi.String]
 
 @Subroutine(uint64)
 def arr_del(str_arr, to_remove):
     i = ScratchVar(TealType.uint64)
     new_arr = StringArray()
-    return  Seq([
+    return  Seq(
     	i.store(Int(0)),
     	While( i.load() < to_remove).Do(
-          Seq([
+          Seq(
     	     newlist.append(str_arr[i.load()]),
-    	     i.store(i.load() + Int(1)) ])
+    	     i.store(i.load() + Int(1)) )
        ),
     	i.store(i.load() + Int(1)),
     	While( i.load() < str_arr.size.load()).Do(
-          Seq([
+          Seq(
     	     newlist.append(str_arr[i.load()]),
-    	     i.store(i.load() + Int(1)) ])
+    	     i.store(i.load() + Int(1)) )
        ),
-    	Return( new_arr ) ])
+    	Return( new_arr ) )
 
 
 @Subroutine(uint64)
@@ -37,7 +91,7 @@ def rnd(min_, max_):
     bigRand = ScratchVar(TealType.uint64)
     rndcnt = ScratchVar(TealType.uint64)
     hash_ = ScratchVar(TealType.bytes)
-    return  Seq([
+    return  Seq(
     	hash_.store(Bytes("")),
     	rndcnt.store(Int(0)),
     	rndcnt.store(App.globalGet(Bytes('rndcnt'))),
@@ -45,7 +99,7 @@ def rnd(min_, max_):
     	bigRand.store(Btoi(Extract(hash_.load() ,rndcnt.load(), Int(7))) + Global.latest_timestamp() % Int(100000)),
     	rndcnt.store(rndcnt.load() + Int(1)),
     	App.globalPut(Bytes('rndcnt'), rndcnt.load()),
-    	Return( min_ + bigRand.load() % (max_ - min_ + Int(1)) ) ])
+    	Return( min_ + bigRand.load() % (max_ - min_ + Int(1)) ) )
 
 
 
@@ -56,22 +110,22 @@ def numtostr(num):
     digit = ScratchVar(TealType.uint64)
     i = ScratchVar(TealType.uint64)
     out = ScratchVar(TealType.bytes)
-    return  Seq([
+    return  Seq(
     	out.store(Bytes("             ")),
     	i.store(Int(0)),
     	digit.store(Int(0)),
     	n.store(num),
     	done.store(Int(0)),
     	While( Not( done.load() )).Do(
-          Seq([
+          Seq(
     	     digit.store(n.load() % Int(10)),
     	     out.store(SetByte(out.load(), Int(12)-i.load(), digit.load()+Int(48))),
     	     n.store(n.load() / Int(10)),
     	     If( n.load() == Int(0), done.store(Int(1))
                   ),
-    	     i.store(i.load() + Int(1)) ])
+    	     i.store(i.load() + Int(1)) )
        ),
-    	Return( Extract(out.load(), Int(12) - i.load() + Int(1), i.load()) ) ])
+    	Return( Extract(out.load(), Int(12) - i.load() + Int(1), i.load()) ) )
 
 if __name__ == "__main__":
     print(compileTeal(app(), mode=Mode.Application, version=5))
