@@ -11,8 +11,11 @@ If you appreciate this tool, you are welcome to send ALGOs to `RMONE54GR6CYOJREK
 
 ### ABI 
 
+
 As of this writing, if you use any ABI stuff, you will need to uninstall regular pyteal and do this:
 `pip install -e git+https://github.com/algorand/pyteal@abi-types#egg=pyteal`
+
+`b67a71a224eb1b8c477ae32b5c4d0ab01a680edb`
 
 *Warning*: The scripts have `python3` in them because that is what works on my system. It only works with Python 3. 
 There might be some system where it needs to say `python` instead.  If so, maybe just pull the code from the github repo to change it?

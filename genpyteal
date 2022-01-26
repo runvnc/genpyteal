@@ -144,17 +144,17 @@ def all(red, x = ''):
       retstr = ''
       if red.type == 'def':
         retstr = f"{scratch}\nreturn "
-      red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
+      red.value = f"{retstr} Seq(\n\t{strlist} )\n"    
       red.value = removeblanks(red.value.dumps())
 
       #####
-    # elif len(strs_) == 1:
+    elif len(strs_) == 1:
       #if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
 
       ########################3
       
-      #if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):      
-      #  red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
+      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):              
+        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
@@ -304,7 +304,7 @@ def ifs(if_):
     findmap(if_.value,'return',returns)
     else_ = ', ' + if_.value[1].value.dumps()
   try:  
-    if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
+    if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n \n"
   except:
     pass
 
@@ -406,8 +406,14 @@ def dump_app_ops(d):
   gs = d.find_all('def', lambda v: v.name in opslist)
   return "\n".join(gs.map(lambda n: n.dumps()))
 
-def dropReturns(currsource):
-  newsource = re.sub(r'Return(\([\s\S]*\))', r'\1 ', currsource)
+def dropReturns(currsource):  
+  return currsource
+  newsource = currsource
+  while 'Return(' in newsource:
+    newsource = re.sub(r'Return(\([\s\S]*\))', r'\1 ', newsource) 
+  while 'Return (' in newsource:
+    newsource = re.sub(r'Return (\([\s\S]*\))', r'\1 ', newsource)
+  
   return newsource
 
 def abiapp(red):
@@ -498,6 +504,7 @@ def convert(fname):
   stat('assign..')
   findmap(red, 'assign', assigns)
   stat('def..')
+
   findmap(red, 'def', fixreturns)
   stat('def..')
   findmap(red, 'def', addreturns)

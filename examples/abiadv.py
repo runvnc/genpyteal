@@ -126,35 +126,30 @@ def take_(what):
   App.localPut(Txn.sender, 'inventory', curr + "\n" + what)
   return 1
 
-def update():
-  return 1
-
-def delete():
-  return 1
 
 def setup_():
   App.localPut(0, 'location', 'Y')
   App.localPut(0, 'inventory', "note")
   return 1
 
-def look() -> Uint32:
+def look() -> abi.Uint32:
   return show(App.localGet(0, 'location'))
 
-def setup() -> Uint32:
+def setup() -> abi.Uint32:
   return setup_()
 
-def move(dir: String) -> Uint32:
+def move(dir: String) -> abi.Uint32:
   return move_(App.localGet(0, 'location'), dir)
 
-def take(what: String) -> Uint32:
+def take(what: String) -> abi.Uint32:
   return take_(what)
 
 def inventory() -> Uint32:
   return inventory_()
 
-def examine(what: String) -> Uint32:
+def examine(what: String) -> abi.Uint32:
   return examine_(what)
 
-def use(item: String) -> Uint32:
+def use(item: String) -> abi.Uint32:
   return use_(item)
     

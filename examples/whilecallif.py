@@ -10,6 +10,7 @@ def acceptable(n, target):
   else:
     return False
 
+
 def app():
   total = 1
   i = 0
