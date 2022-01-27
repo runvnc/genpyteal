@@ -6,6 +6,7 @@ import sys
 from collections.abc import Iterable
 import os
 import re
+from pathlib import Path
 
 ABI = False
 
@@ -455,16 +456,28 @@ globals().update(TealType.__members__)
   print(dropReturns(dump_abi_defs(red)))
 
   print(dump_app_ops(red))
+
+  fname = Path(sys.argv[1]).stem
   
-  print("""
+  code = """
 if __name__ == "__main__":
   app = ABIApp()
 
-  with open("interface.json", "w") as f:
-    f.write(json.dumps(app.get_interface().dictify(), indent=4))
+  currint = {}
+  try:
+    currjson = open('{fname}.json').read()
+    currint = json.loads(currjson)    
+  except:
+    pass
+    
+  currint['methods'] = app.get_interface().dictify()['methods']
+  with open("{fname}.json", "w") as f:
+    f.write(json.dumps(currint, indent=4))
 
   print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
-  """)
+  """
+  code = code.replace('{fname}', fname)
+  print(code)
 
 def usesabi(red):
   defs_ = red.find_all('def')

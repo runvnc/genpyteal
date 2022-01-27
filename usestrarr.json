@@ -1,0 +1,43 @@
+{
+    "name": "ABIApp",
+    "networks": {
+        "default": {
+            "appID": 564659691
+        }
+    },
+    "methods": [
+        {
+            "name": "init",
+            "args": [],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "show_inventory",
+            "args": [],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "get_inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
+            }
+        },
+        {
+            "name": "pickup",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        }
+    ]
+}

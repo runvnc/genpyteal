@@ -2,14 +2,21 @@ from typing import Tuple
 
 from pyteal import *
 
-#from pytealutils import *
-
 from pytealutils import abi
 
-from libex import *
-
+from .libex import *
 
 StringArray = abi.DynamicArray[abi.String]
+
+def arr_find(str_arr_bytes:bytes, item:bytes):
+  str_arr = StringArray(str_arr_bytes)
+  str_arr.init()
+  i = 0
+  while i < str_arr.size.load():
+    if String(str_arr[i]).value == item:
+      return i
+    i = i +1
+  return 999
 
 def arr_del(str_arr, to_remove):
   new_arr = StringArray()

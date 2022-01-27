@@ -21,6 +21,9 @@ fgGreen = Bytes("\033[38;5;2m")
 fgYellow = Bytes("\033[38;5;11m")
 
 
+fgPurple = Bytes("\033[38;5;35m")
+
+
 fgWhite = Bytes("\033[38;5;15m")
 
 
@@ -131,6 +134,7 @@ def printloc(descr, conn_descr, connects):
     	Log(descr),
     	Log(fgYellow),
     	Log(conn_descr),
+    	show_at_location_(),
     	Log(fgGreen),
     	Log(connects),
     	Log(resetColor) )
@@ -151,13 +155,39 @@ def show(l):
 
 
 @Subroutine(uint64)
-def inventory_():
+def show_inventory_():
+    i = ScratchVar(TealType.uint64)
+    inv = StringArray(lgets(Bytes('inventory')))
     return  Seq(
     	Log(Bytes("You are carrying:")),
     	Log(fgYellow),
-    	Log(lgets(Bytes('inventory'))),
+    	inv.init(),
+    	i.store(Int(0)),
+    	While( i.load() < inv.size.load()).Do(
+          Seq(
+    	     Log(abi.String(inv[i.load()]).value),
+    	     i.store(i.load() + Int(1)) )
+       ),
     	Log(resetColor),
     	Return( Int(1) ) )
+
+
+
+@Subroutine(TealType.none)
+def show_at_location_():
+    i = ScratchVar(TealType.uint64)
+    items = StringArray(lgets(Concat(lgets(Bytes('location')),Bytes('_items'))))
+    return  Seq(
+    	Log(Bytes('You see the following items here:')),
+    	Log(fgPurple),
+    	items.init(),
+    	i.store(Int(0)),
+    	While( i.load() < items.size.load()).Do(
+          Seq(
+    	     Log(abi.String(items[i.load()]).value),
+    	     i.store(i.load() + Int(1)) )
+       ),
+    	Log(resetColor) )
 
 
 
@@ -229,13 +259,68 @@ def use_(item):
 
 
 @Subroutine(uint64)
-def take_(what):
-    curr = ScratchVar(TealType.bytes)
+def takeable_at(item:bytes):
+    return If( arr_find(lgets(Concat(lgets(Bytes('location')),Bytes('_items'))), item) != Int(999), 
+          Return( Int(1) )
+        , 
+          Return( Int(0) )
+      
+       )
+
+
+
+@Subroutine(uint64)
+def take_(what:TealType.bytes):
+    inv = StringArray(lgets(Bytes('inventory')))
     return  Seq(
-    	curr.store(Bytes("")),
-    	curr.store(lgets(Bytes('inventory'))),
-    	App.localPut(Int(0),Bytes('inventory'), Concat(curr.load(),Concat(Bytes("\n"),what))),
+    	If( Not( takeable_at(what) ), 
+          Log(Bytes('You do not see that here, or it is not something you can take.'))
+        , 
+            Seq(
+    	       inv.init(),
+    	       inv.append(String(what)),
+    	       App.localPut(Int(0),Bytes('inventory'), inv.serialize()),
+    	       Log(Concat(Bytes('You take the '),what)) )
+       ),
     	Return( Int(1) ) )
+
+
+
+@Subroutine(uint64)
+def drop_(what):
+    arrname = ScratchVar(TealType.bytes)
+    inv = StringArray(lgets(Bytes('inventory')))
+    return  Seq(
+    	inv.init(),
+    	If( Not( arr_find(inv, what) ), 
+          Log(Bytes('You are not carrying that.'))
+        , 
+            Seq(
+    	       arr_del(inv, what),
+    	       arrname.store(Concat(lgets(Bytes('location')),Bytes('_items'))),
+    	       items.init(),
+    	       items.append(what),
+    	       Log(Concat(Bytes('You dropped the '),what + Bytes('.'))) )
+       ),
+    	Return( Int(1) ) )
+
+
+
+@Subroutine(TealType.none)
+def init_local_array(name):
+    strarr = StringArray(Bytes(""))
+    return  Seq(
+    	strarr.init(),
+    	App.localPut(Int(0),name, strarr.serialize()) )
+
+
+
+@Subroutine(TealType.none)
+def init_global_array(name):
+    strarr = StringArray(Bytes(""))
+    return  Seq(
+    	strarr.init(),
+    	App.globalPut(name, strarr.serialize()) )
 
 
 
@@ -243,7 +328,11 @@ def take_(what):
 def setup_():
     return  Seq(
     	App.localPut(Int(0),Bytes('location'), Bytes('Y')),
-    	App.localPut(Int(0),Bytes('inventory'), Bytes("note")),
+    	init_global_array(Bytes('inventory')),
+    	init_global_array(Bytes('Y_items')),
+    	init_global_array(Bytes('L_items')),
+    	init_global_array(Bytes('S_items')),
+    	init_global_array(Bytes('D_items')),
     	Return( Int(1) ) )
 
 
@@ -280,8 +369,8 @@ class ABIApp(DefaultApprove):
 
   @staticmethod
   @ABIMethod
-  def inventory() -> abi.Uint32:
-    return ( inventory_() )
+  def inventory() -> StringArray:
+    return ( lgets(Bytes('inventory')) )
 
   
 
@@ -303,8 +392,16 @@ class ABIApp(DefaultApprove):
 if __name__ == "__main__":
   app = ABIApp()
 
-  with open("interface.json", "w") as f:
-    f.write(json.dumps(app.get_interface().dictify(), indent=4))
+  currint = {}
+  try:
+    currjson = open('abiadv.json').read()
+    currint = json.loads(currjson)    
+  except:
+    pass
+    
+  currint['methods'] = app.get_interface().dictify()['methods']
+  with open("abiadv.json", "w") as f:
+    f.write(json.dumps(currint, indent=4))
 
   print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
   

@@ -5,7 +5,7 @@ def show_inventory_():
   inv.init()
   i = 0  
   while i < inv.size:
-    print(inv[i])
+    print(abi.String(inv[i]).value)
     i = i + 1
   return 1
 

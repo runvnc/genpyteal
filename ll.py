@@ -8,16 +8,14 @@ from pyteal import *
 
 from pytealutils import abi
 
-from .libex import *
+from libex import *
 
 StringArray = abi.DynamicArray[abi.String]
 
 @Subroutine(uint64)
-def arr_find(str_arr_bytes:bytes, item:bytes):
+def arr_find(str_arr, item):
     i = ScratchVar(TealType.uint64)
-    str_arr = StringArray(str_arr_bytes)
     return  Seq(
-    	str_arr.init(),
     	i.store(Int(0)),
     	While( i.load() < str_arr.size.load()).Do(
           Seq(

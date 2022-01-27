@@ -2,6 +2,7 @@ from lib.util import *
 
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
+fgPurple = "\033[38;5;35m"
 fgWhite = "\033[38;5;15m"
 resetColor = "\033[0m"
 
@@ -61,6 +62,8 @@ def printloc(descr, conn_descr, connects):
   
   print(fgYellow)
   print(conn_descr)
+
+  show_at_location_()
   
   print(fgGreen)
   print(connects)
@@ -73,12 +76,31 @@ def show(l):
   if l == 'S': printloc(study, study_conn_descr, study_connects)
   return 1
 
-def inventory_():  
+
+def show_inventory_():
+  inv = StringArray(lgets('inventory'))
   print("You are carrying:")
   print(fgYellow)
-  print(lgets('inventory'))
+
+  inv.init()
+  i = 0 
+  while i < inv.size:
+    print(abi.String(inv[i]).value)
+    i = i + 1
   print(resetColor)
   return 1
+
+def show_at_location_():
+  items = StringArray(lgets(lgets('location') + '_items'))
+  print('You see the following items here:')
+  print(fgPurple)
+  items.init()
+  i = 0 
+  while i < items.size:
+    print(abi.String(items[i]).value)
+    i = i + 1
+  
+  print(resetColor)
 
 def printitem(i):
   print(fgWhite)
@@ -118,16 +140,56 @@ def use_(item):
   else:
     print("You can't use that.")
   return 1
+
+def takeable_at(item:bytes):
+  if arr_find(lgets(lgets('location')+'_items'), item) != 999:
+    return True
+  else:
+    return False
   
-def take_(what):
-  curr = ""
-  curr = lgets('inventory')
-  lput('inventory', curr + "\n" + what)
+def take_(what:TealType.bytes):
+  inv = StringArray(lgets('inventory'))
+  if not takeable_at(what):
+    print('You do not see that here, or it is not something you can take.')
+  else:  
+    inv.init()
+    inv.append(String(what))
+    lput('inventory', inv.serialize())
+    print('You take the ' + what)
   return 1
+
+def drop_(what):
+  inv = StringArray(lgets('inventory'))
+  inv.init()
+  if not arr_find(inv, what):
+    print('You are not carrying that.')
+  else:
+    arr_del(inv, what)
+    arrname = lgets('location') + '_items'
+    items = StringArray(lgets(arrname))
+    items.init()
+    items.append(what)
+    print('You dropped the ' + what + '.')
+  return 1
+  
+def init_local_array(name):
+  strarr = StringArray("")
+  strarr.init()
+  lput(name, strarr.serialize())
+
+def init_global_array(name):
+  strarr = StringArray("")
+  strarr.init()
+  gput(name, strarr.serialize())
 
 def setup_():
   lput('location', 'Y')
-  lput('inventory', "note")
+  init_global_array('inventory')
+  init_global_array('Y_items')
+  init_global_array('L_items')
+  init_global_array('S_items')
+  init_global_array('D_items')
+  
   return 1
 
 def look() -> abi.Uint32:
@@ -142,8 +204,8 @@ def move(dir: String) -> abi.Uint32:
 def take(what: String) -> abi.Uint32:
   return take_(what)
 
-def inventory() -> abi.Uint32:
-  return inventory_()
+def inventory() -> StringArray:
+  return lgets('inventory')
 
 def examine(what: String) -> abi.Uint32:
   return examine_(what)
