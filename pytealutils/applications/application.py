@@ -43,6 +43,10 @@ def ABIReturn(b: TealType.bytes) -> Expr:
 def ABIMethod(func):
     sig = signature(func)
 
+    args1 = []
+    for v in sig.parameters.values():
+      args1.append(( v.annotation.__str__(), v.name ))
+
     args = [tealabi.abiTypeName(v.annotation) for v in sig.parameters.values()]
     returns = sig.return_annotation
 
@@ -51,7 +55,7 @@ def ABIMethod(func):
     )
 
     setattr(func, "abi_selector", hashy(method))
-    setattr(func, "abi_args", [abi.Argument(arg) for arg in args])
+    setattr(func, "abi_args", [abi.Argument(type, name) for (type, name) in args1])
     setattr(func, "abi_returns", abi.Returns(tealabi.abiTypeName(returns)))
 
     # Get the types specified in the method
@@ -112,10 +116,12 @@ class Application(ABC):
 
     def handler(self) -> Expr:
         methods = self.get_methods()
-
+       
+        withABI = filter(lambda m: hasattr(getattr(self,m), 'abi_args'), self.get_methods())
+        
         routes = [
             [Txn.application_args[0] == f.abi_selector, f()]
-            for f in map(lambda m: getattr(self, m), methods)
+            for f in map(lambda m: getattr(self, m), withABI)
         ]
 
         # Hack to add budget padding
@@ -140,13 +146,14 @@ class Application(ABC):
         return Cond(*handlers)
 
     def get_interface(self) -> abi.Interface:
+        withABI = filter(lambda m: hasattr(getattr(self,m), 'abi_args'), self.get_methods())
         abiMethods = [
             abi.Method(f.__name__, f.abi_args, f.abi_returns)
-            for f in map(lambda m: getattr(self, m), self.get_methods())
+            for f in map(lambda m: getattr(self, m), withABI)
         ]
 
         # TODO: hacked this in for now, to provide extended extended budget
-        abiMethods.append(abi.Method("pad", [], abi.Returns("void")))
+        #abiMethods.append(abi.Method("pad", [], abi.Returns("void")))
 
         return abi.Interface(self.__class__.__name__, abiMethods)
 
