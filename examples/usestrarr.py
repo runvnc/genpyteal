@@ -1,7 +1,7 @@
 from lib.util import *
 
 def show_inventory_():
-  inv = StringArray(lget('inventory'))
+  inv = StringArray(lgets('inventory'))
   inv.init()
   i = 0  
   while i < inv.size:
@@ -10,9 +10,10 @@ def show_inventory_():
   return 1
 
 def pickup_(item):
-  inv = StringArray(lget('inventory'))
+  inv = StringArray(lgets('inventory'))
   inv.init()
   inv.append(item)
+  lput('inventory', inv.serialize())
   return show_inventory_()
 
 def init_():
@@ -25,7 +26,7 @@ def init() -> abi.Uint32:
   return init_()
 
 def get_inventory() -> StringArray:
-  return lget('inventory')
+  return lgets('inventory')
 
 def pickup(item: String) -> abi.Uint32:
   return pickup_(item)
