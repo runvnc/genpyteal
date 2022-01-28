@@ -185,10 +185,12 @@ def take_(what:TealType.bytes):
 
 def drop_(what:TealType.bytes):
   items = StringArray(ggets(lgets('location') + '_items'))
-  if arr_find(lgets('inventory'), what) == NOT_FOUND:
+  ind = 0
+  ind = arr_find(lgets('inventory'), what) 
+  if ind == NOT_FOUND:
     print('You are not carrying that.')
   else:
-    lput('inventory', arr_del(lgets('inventory'), what))
+    lput('inventory', arr_del(lgets('inventory'), ind))
     items.init()
     items.append(abi.String.encode(what))
     print('You dropped the ' + what)

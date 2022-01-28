@@ -327,13 +327,16 @@ def take_(what:TealType.bytes):
 
 @Subroutine(uint64)
 def drop_(what:TealType.bytes):
+    ind = ScratchVar(TealType.uint64)
     items = StringArray(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))))
     return  Seq(
-    	If( arr_find(lgets(Bytes('inventory')), what) == NOT_FOUND, 
+    	ind.store(Int(0)),
+    	ind.store(arr_find(lgets(Bytes('inventory')), what)),
+    	If( ind.load() == NOT_FOUND, 
           Log(Bytes('You are not carrying that.'))
         , 
             Seq(
-    	       App.localPut(Int(0),Bytes('inventory'), arr_del(lgets(Bytes('inventory')), what)),
+    	       App.localPut(Int(0),Bytes('inventory'), arr_del(lgets(Bytes('inventory')), ind.load())),
     	       items.init(),
     	       items.append(abi.String.encode(what)),
     	       Log(Concat(Bytes('You dropped the '),what)),

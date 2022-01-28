@@ -38,8 +38,7 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
 
 
 @Subroutine(TealType.bytes)
-def arr_del(str_arr_bytes, to_remove):
-    index_to_remove = ScratchVar(TealType.uint64)
+def arr_del(str_arr_bytes, index_to_remove):
     i = ScratchVar(TealType.uint64)
     str_arr = StringArray(str_arr_bytes)
     new_arr = StringArray(Bytes(""))
@@ -47,9 +46,7 @@ def arr_del(str_arr_bytes, to_remove):
     	new_arr.init(),
     	str_arr.init(),
     	i.store(Int(0)),
-    	index_to_remove.store(Int(0)),
-    	index_to_remove.store(arr_find(str_arr_bytes, to_remove)),
-    	While( i.load() < index_to_remove.load()).Do(
+    	While( i.load() < index_to_remove).Do(
           Seq(
     	     new_arr.append(str_arr[i.load()]),
     	     i.store(i.load() + Int(1)) )

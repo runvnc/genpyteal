@@ -25,14 +25,12 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
   return NOT_FOUND
 
 @bytes
-def arr_del(str_arr_bytes, to_remove):
+def arr_del(str_arr_bytes, index_to_remove):
   str_arr = StringArray(str_arr_bytes)
   new_arr = StringArray("")
   new_arr.init()
   str_arr.init()
   i = 0
-  index_to_remove = 0
-  index_to_remove = arr_find(str_arr_bytes, to_remove)
   while i < index_to_remove:
     new_arr.append(str_arr[i])
     i = i + 1
