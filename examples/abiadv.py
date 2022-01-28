@@ -47,6 +47,7 @@ def move_(location, direction):
   i = 0
   l = 0
   d = 0
+  print("Trying to move " + direction)
   while i < Len(connects):
     if Extract(connects, i, 1) == direction:
       lput('location', Extract(connects, i + 1, 1))
@@ -91,15 +92,19 @@ def show_inventory_():
   return 1
 
 def show_at_location_():
-  items = StringArray(lgets(lgets('location') + '_items'))
-  print('You see the following items here:')
-  print(fgPurple)
+  items = StringArray(ggets(lgets('location') + '_items'))
   items.init()
-  i = 0 
-  while i < items.size:
-    print(abi.String(items[i]).value)
-    i = i + 1
-  
+  if items.size == 0:
+    n = 0
+  else:
+    print('You see the following items here:')
+    print(fgPurple)
+    
+    i = 0 
+    while i < 1: #items.size:
+      print(abi.String(items[i]).value)
+      i = i + 1
+    
   print(resetColor)
 
 def printitem(i):
@@ -130,6 +135,10 @@ def examine_(i):
   return 1
 
 def use_(item):
+  if not arr_find(lgets('inventory'), item):
+    print('You are not carrying that.')
+    return 1
+
   if item == 'die' or item == 'dice' or item == 'd20':
     print("Rolling d20...")
     print(fgYellow)
@@ -175,16 +184,20 @@ def drop_(what):
 def init_local_array(name):
   strarr = StringArray("")
   strarr.init()
+  
   lput(name, strarr.serialize())
 
 def init_global_array(name):
   strarr = StringArray("")
   strarr.init()
+  if name == 'S_items':
+    strarr.append('d20')
+
   gput(name, strarr.serialize())
 
 def setup_():
   lput('location', 'Y')
-  init_global_array('inventory')
+  init_local_array('inventory')
   init_global_array('Y_items')
   init_global_array('L_items')
   init_global_array('S_items')
@@ -199,10 +212,10 @@ def setup() -> abi.Uint32:
   return setup_()
 
 def move(dir: String) -> abi.Uint32:
-  return move_(lgets('location'), dir)
+  return move_(lgets('location'), abi.String(dir).value)
 
 def take(what: String) -> abi.Uint32:
-  return take_(what)
+  return take_(abi.String(what).value)
 
 def inventory() -> StringArray:
   return lgets('inventory')
@@ -211,5 +224,5 @@ def examine(what: String) -> abi.Uint32:
   return examine_(what)
 
 def use(item: String) -> abi.Uint32:
-  return use_(item)
+  return use_(abi.String(item).value)
     
