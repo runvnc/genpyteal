@@ -247,8 +247,7 @@ class DynamicArray(Generic[T]):
         self.bytes = ScratchVar(TealType.bytes)
         self.lengths = ScratchVar(TealType.bytes)
 
-        self.value = data
-        self.init()
+        self.value = data        
 
     def init(self) -> Expr:
         return (

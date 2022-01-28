@@ -4,7 +4,10 @@ fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgPurple = "\033[38;5;35m"
 fgWhite = "\033[38;5;15m"
-resetColor = "\033[0m"
+fgRed = '\033[38;5;31m'
+bgWhite = '\033[48;2;250;250;250m'
+bgRed = '\033[48;2;250;0;0m'
+resetColor = "\033[0m\033[48;2;0;0;0m"
 
 yard = "Front Yard\nYou are standing in front of a house. It is white, with green trim."
 yard_connects = "NL"
@@ -16,7 +19,7 @@ living_room_connects = "ESSY"
 living_room_conn_descr = """From here you can enter the study to the east or go back outside (south)."""
 
 study = """Study
-There is an Ohio Scientific computer here from the late 1970s. A rickety bookshelf contains some old Dungeons & Dragons Books."""
+There is an Ohio Scientific computer here from the late 1970s. A rickety bookshelf contains some old Dungeons & Dragons books."""
 study_connects = "WL"
 study_conn_descr = "To the west is the living room."  
 
@@ -134,6 +137,12 @@ def examine_(i):
     print(s)
   return 1
 
+def encounter():
+  print('A ' + fgRed + bgWhite + 'Bitcoin Maximalist ' + resetColor + 'suddenly appears and attacks you with')
+  print(fgRed + 'Nonsense')
+  print(bgRed + fgWhite + 'You lose [10] hit points' + resetColor)
+  return 1
+
 def use_(item:bytes):
   if arr_find(lgets('inventory'), item) == 999:
     print('You are not carrying that.')
@@ -146,6 +155,8 @@ def use_(item:bytes):
     roll = rolld20()
     print("[ " + numtostr(roll) + " ]")
     print(resetColor)
+    if roll < 10:
+      return encounter()
   else:
     print("You can't use that.")
   return 1
@@ -168,17 +179,15 @@ def take_(what:TealType.bytes):
   return 1
 
 def drop_(what):
-  inv = StringArray(lgets('inventory'))
-  inv.init()
-  if not arr_find(inv, what):
+  items = StringArray(ggets(lgets('location') + '_items'))
+  if not arr_find(lgets('inventory'), what):
     print('You are not carrying that.')
   else:
-    arr_del(inv, what)
-    arrname = lgets('location') + '_items'
-    items = StringArray(ggets(arrname))
+    lput('inventory', arr_del(lgets('inventory'), what))
     items.init()
-    items.append(what)
+    items.append(abi.String.encode(what))
     print('You dropped the ' + what + '.')
+    gput(lgets('location')+'_items', items.serialize())
   return 1
   
 def init_local_array(name):
@@ -219,11 +228,14 @@ def move(dir: String) -> abi.Uint32:
 def take(what: String) -> abi.Uint32:
   return take_(abi.String(what).value)
 
+def drop(what: String) -> abi.Uint32:
+  return drop_(abi.String(what).value)
+
 def inventory() -> StringArray:
   return lgets('inventory')
 
 def examine(what: String) -> abi.Uint32:
-  return examine_(what)
+  return examine_(abi.String(what).value)
 
 def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)

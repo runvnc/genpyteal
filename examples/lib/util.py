@@ -19,16 +19,19 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
   return 999
 
 def arr_del(str_arr, to_remove):
-  new_arr = StringArray()
+  new_arr = StringArray("")
+  new_arr.init()
   i = 0
-  while i < to_remove:
-    newlist.append(str_arr[i])
+  index_to_remove = 0
+  index_to_remove = arr_find(str_arr, to_remove)
+  while i < index_to_remove:
+    new_arr.append(str_arr[i])
     i = i + 1
   i = i + 1
   while i < str_arr.size.load():
-    newlist.append(str_arr[i])
+    new_arr.append(str_arr[i])
     i = i + 1
-  return new_arr
+  return new_arr.serialize()
 
 def rnd(min_, max_):
   hash_ = ""

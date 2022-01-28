@@ -31,22 +31,26 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
 
 @Subroutine(uint64)
 def arr_del(str_arr, to_remove):
+    index_to_remove = ScratchVar(TealType.uint64)
     i = ScratchVar(TealType.uint64)
-    new_arr = StringArray()
+    new_arr = StringArray(Bytes(""))
     return  Seq(
+    	new_arr.init(),
     	i.store(Int(0)),
-    	While( i.load() < to_remove).Do(
+    	index_to_remove.store(Int(0)),
+    	index_to_remove.store(arr_find(str_arr, to_remove)),
+    	While( i.load() < index_to_remove.load()).Do(
           Seq(
-    	     newlist.append(str_arr[i.load()]),
+    	     new_arr.append(str_arr[i.load()]),
     	     i.store(i.load() + Int(1)) )
        ),
     	i.store(i.load() + Int(1)),
     	While( i.load() < str_arr.size.load()).Do(
           Seq(
-    	     newlist.append(str_arr[i.load()]),
+    	     new_arr.append(str_arr[i.load()]),
     	     i.store(i.load() + Int(1)) )
        ),
-    	Return( new_arr ) )
+    	Return( new_arr.serialize() ) )
 
 
 @Subroutine(uint64)
