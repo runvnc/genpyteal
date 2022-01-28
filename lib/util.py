@@ -21,7 +21,7 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
     	i.store(Int(0)),
     	While( i.load() < str_arr.size.load()).Do(
           Seq(
-    	     If( String(str_arr[i.load()]).value == item, 
+    	     If( str_arr[i.load()] == abi.String(item).value, 
                    Return( i.load() )
                   ),
     	     i.store(i.load() +Int(1)) )

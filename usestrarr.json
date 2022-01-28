@@ -7,6 +7,13 @@
     },
     "methods": [
         {
+            "name": "get_inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
+            }
+        },
+        {
             "name": "init",
             "args": [],
             "returns": {
@@ -18,13 +25,6 @@
             "args": [],
             "returns": {
                 "type": "uint32"
-            }
-        },
-        {
-            "name": "get_inventory",
-            "args": [],
-            "returns": {
-                "type": "string[]"
             }
         },
         {

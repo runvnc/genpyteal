@@ -101,8 +101,8 @@ def show_at_location_():
     print(fgPurple)
     
     i = 0 
-    while i < 1: #items.size:
-      print(abi.String(items[i]).value)
+    while i < items.size:
+      print(items[i])
       i = i + 1
     
   print(resetColor)
@@ -135,7 +135,7 @@ def examine_(i):
   return 1
 
 def use_(item):
-  if not arr_find(lgets('inventory'), item):
+  if not arr_find(lgets('inventory'), item) < 999:
     print('You are not carrying that.')
     return 1
 
@@ -151,7 +151,7 @@ def use_(item):
   return 1
 
 def takeable_at(item:bytes):
-  if arr_find(lgets(lgets('location')+'_items'), item) != 999:
+  if arr_find(ggets(lgets('location')+'_items'), item) != 999:
     return True
   else:
     return False
@@ -162,7 +162,7 @@ def take_(what:TealType.bytes):
     print('You do not see that here, or it is not something you can take.')
   else:  
     inv.init()
-    inv.append(String(what))
+    inv.append(what)
     lput('inventory', inv.serialize())
     print('You take the ' + what)
   return 1
@@ -175,7 +175,7 @@ def drop_(what):
   else:
     arr_del(inv, what)
     arrname = lgets('location') + '_items'
-    items = StringArray(lgets(arrname))
+    items = StringArray(ggets(arrname))
     items.init()
     items.append(what)
     print('You dropped the ' + what + '.')
@@ -184,6 +184,8 @@ def drop_(what):
 def init_local_array(name):
   strarr = StringArray("")
   strarr.init()
+  #if name == 'inventory':
+  #  strarr.append('note')
   
   lput(name, strarr.serialize())
 
@@ -215,7 +217,7 @@ def move(dir: String) -> abi.Uint32:
   return move_(lgets('location'), abi.String(dir).value)
 
 def take(what: String) -> abi.Uint32:
-  return take_(abi.String(what).value)
+  return take_(what)
 
 def inventory() -> StringArray:
   return lgets('inventory')
