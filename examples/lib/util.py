@@ -8,6 +8,10 @@ from .libex import *
 
 StringArray = abi.DynamicArray[abi.String]
 
+@bytes
+def clr(s, ansi):
+  return Concat(ansi, s)
+
 def arr_find(str_arr_bytes:bytes, item:bytes):
   str_arr = StringArray(str_arr_bytes)
   str_arr.init()
@@ -18,12 +22,15 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
     i = i +1
   return 999
 
-def arr_del(str_arr, to_remove):
+@bytes
+def arr_del(str_arr_bytes, to_remove):
+  str_arr = StringArray(str_arr_bytes)
   new_arr = StringArray("")
   new_arr.init()
+  str_arr.init()
   i = 0
   index_to_remove = 0
-  index_to_remove = arr_find(str_arr, to_remove)
+  index_to_remove = arr_find(str_arr_bytes, to_remove)
   while i < index_to_remove:
     new_arr.append(str_arr[i])
     i = i + 1

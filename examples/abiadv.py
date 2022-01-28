@@ -138,9 +138,11 @@ def examine_(i):
   return 1
 
 def encounter():
-  print('A ' + fgRed + bgWhite + 'Bitcoin Maximalist ' + resetColor + 'suddenly appears and attacks you with')
-  print(fgRed + 'Nonsense')
-  print(bgRed + fgWhite + 'You lose [10] hit points' + resetColor)
+  print('A')
+  print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite)))
+  print(clr('suddenly appears and attacks you with',resetColor))
+  print(clr('Nonsense', fgRed))
+  #print(B(bgRed) + B(fgWhite) + 'You lose [10] hit points' + B(resetColor))
   return 1
 
 def use_(item:bytes):
@@ -178,7 +180,7 @@ def take_(what:TealType.bytes):
     print('You take the ' + what)
   return 1
 
-def drop_(what):
+def drop_(what:TealType.bytes):
   items = StringArray(ggets(lgets('location') + '_items'))
   if not arr_find(lgets('inventory'), what):
     print('You are not carrying that.')
@@ -186,8 +188,8 @@ def drop_(what):
     lput('inventory', arr_del(lgets('inventory'), what))
     items.init()
     items.append(abi.String.encode(what))
-    print('You dropped the ' + what + '.')
-    gput(lgets('location')+'_items', items.serialize())
+    print('You dropped the ' + what)
+    gput(lgets('location')+'_items', items.serialize())    
   return 1
   
 def init_local_array(name):

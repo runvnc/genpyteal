@@ -12,6 +12,11 @@ from .libex import *
 
 StringArray = abi.DynamicArray[abi.String]
 
+
+@Subroutine(TealType.bytes)
+def clr(s, ansi):
+  return ( Concat(ansi, s) )
+
 @Subroutine(uint64)
 def arr_find(str_arr_bytes:bytes, item:bytes):
     i = ScratchVar(TealType.uint64)
@@ -29,16 +34,19 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
     	Return( Int(999) ) )
 
 
-@Subroutine(uint64)
-def arr_del(str_arr, to_remove):
+
+@Subroutine(TealType.bytes)
+def arr_del(str_arr_bytes, to_remove):
     index_to_remove = ScratchVar(TealType.uint64)
     i = ScratchVar(TealType.uint64)
+    str_arr = StringArray(str_arr_bytes)
     new_arr = StringArray(Bytes(""))
     return  Seq(
     	new_arr.init(),
+    	str_arr.init(),
     	i.store(Int(0)),
     	index_to_remove.store(Int(0)),
-    	index_to_remove.store(arr_find(str_arr, to_remove)),
+    	index_to_remove.store(arr_find(str_arr_bytes, to_remove)),
     	While( i.load() < index_to_remove.load()).Do(
           Seq(
     	     new_arr.append(str_arr[i.load()]),
