@@ -13,7 +13,7 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
   str_arr.init()
   i = 0
   while i < str_arr.size.load():
-    if str_arr[i] == abi.String(item).value:
+    if str_arr[i] == abi.String.encode(item):
       return i
     i = i +1
   return 999

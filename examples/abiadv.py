@@ -134,8 +134,8 @@ def examine_(i):
     print(s)
   return 1
 
-def use_(item):
-  if not arr_find(lgets('inventory'), item) < 999:
+def use_(item:bytes):
+  if arr_find(lgets('inventory'), item) == 999:
     print('You are not carrying that.')
     return 1
 
@@ -162,7 +162,7 @@ def take_(what:TealType.bytes):
     print('You do not see that here, or it is not something you can take.')
   else:  
     inv.init()
-    inv.append(what)
+    inv.append(abi.String.encode(what))
     lput('inventory', inv.serialize())
     print('You take the ' + what)
   return 1
@@ -193,7 +193,7 @@ def init_global_array(name):
   strarr = StringArray("")
   strarr.init()
   if name == 'S_items':
-    strarr.append('d20')
+    strarr.append(abi.String.encode('d20'))
 
   gput(name, strarr.serialize())
 
@@ -217,7 +217,7 @@ def move(dir: String) -> abi.Uint32:
   return move_(lgets('location'), abi.String(dir).value)
 
 def take(what: String) -> abi.Uint32:
-  return take_(what)
+  return take_(abi.String(what).value)
 
 def inventory() -> StringArray:
   return lgets('inventory')
