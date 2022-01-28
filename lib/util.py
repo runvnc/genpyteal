@@ -12,6 +12,8 @@ from .libex import *
 
 StringArray = abi.DynamicArray[abi.String]
 
+NOT_FOUND = Int(999)
+
 
 @Subroutine(TealType.bytes)
 def clr(s, ansi):
@@ -31,7 +33,7 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
                   ),
     	     i.store(i.load() +Int(1)) )
        ),
-    	Return( Int(999) ) )
+    	Return( NOT_FOUND ) )
 
 
 

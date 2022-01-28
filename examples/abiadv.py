@@ -140,13 +140,16 @@ def examine_(i):
 def encounter():
   print('A')
   print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite)))
-  print(clr('suddenly appears and attacks you with',resetColor))
+  print(resetColor)
+  print('suddenly appears and attacks you with')
   print(clr('Nonsense', fgRed))
-  #print(B(bgRed) + B(fgWhite) + 'You lose [10] hit points' + B(resetColor))
+  print(resetColor)
+  print(clr('You lose [10] hit points', Concat(bgRed, fgWhite)) )
+  print(resetColor)
   return 1
 
 def use_(item:bytes):
-  if arr_find(lgets('inventory'), item) == 999:
+  if arr_find(lgets('inventory'), item) == NOT_FOUND:
     print('You are not carrying that.')
     return 1
 
@@ -164,7 +167,7 @@ def use_(item:bytes):
   return 1
 
 def takeable_at(item:bytes):
-  if arr_find(ggets(lgets('location')+'_items'), item) != 999:
+  if arr_find(ggets(lgets('location')+'_items'), item) != NOT_FOUND:
     return True
   else:
     return False
@@ -182,7 +185,7 @@ def take_(what:TealType.bytes):
 
 def drop_(what:TealType.bytes):
   items = StringArray(ggets(lgets('location') + '_items'))
-  if not arr_find(lgets('inventory'), what):
+  if arr_find(lgets('inventory'), what) == NOT_FOUND:
     print('You are not carrying that.')
   else:
     lput('inventory', arr_del(lgets('inventory'), what))

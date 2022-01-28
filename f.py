@@ -260,8 +260,12 @@ def encounter():
     return  Seq(
     	Log(Bytes('A')),
     	Log(clr(Bytes('Bitcoin Maximalist '),Concat(fgRed, bgWhite))),
-    	Log(clr(Bytes('suddenly appears and attacks you with'),resetColor)),
+    	Log(resetColor),
+    	Log(Bytes('suddenly appears and attacks you with')),
     	Log(clr(Bytes('Nonsense'), fgRed)),
+    	Log(resetColor),
+    	Log(clr(Bytes('You lose [10] hit points'), Concat(bgRed, fgWhite)) ),
+    	Log(resetColor),
     	Return( Int(1) ) )
 
 
@@ -270,7 +274,7 @@ def encounter():
 def use_(item:bytes):
     roll = ScratchVar(TealType.uint64)
     return  Seq(
-    	If( arr_find(lgets(Bytes('inventory')), item) == Int(999), 
+    	If( arr_find(lgets(Bytes('inventory')), item) == NOT_FOUND, 
             Seq(
     	       Log(Bytes('You are not carrying that.')),
     	       Return( Int(1) ) )
@@ -295,7 +299,7 @@ def use_(item:bytes):
 
 @Subroutine(uint64)
 def takeable_at(item:bytes):
-    return If( arr_find(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))), item) != Int(999), 
+    return If( arr_find(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))), item) != NOT_FOUND, 
           Return( Int(1) )
         , 
           Return( Int(0) )
@@ -325,7 +329,7 @@ def take_(what:TealType.bytes):
 def drop_(what:TealType.bytes):
     items = StringArray(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))))
     return  Seq(
-    	If( Not( arr_find(lgets(Bytes('inventory')), what) ), 
+    	If( arr_find(lgets(Bytes('inventory')), what) == NOT_FOUND, 
           Log(Bytes('You are not carrying that.'))
         , 
             Seq(

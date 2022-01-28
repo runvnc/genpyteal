@@ -8,6 +8,8 @@ from .libex import *
 
 StringArray = abi.DynamicArray[abi.String]
 
+NOT_FOUND = Int(999)
+
 @bytes
 def clr(s, ansi):
   return Concat(ansi, s)
@@ -20,7 +22,7 @@ def arr_find(str_arr_bytes:bytes, item:bytes):
     if str_arr[i] == abi.String.encode(item):
       return i
     i = i +1
-  return 999
+  return NOT_FOUND
 
 @bytes
 def arr_del(str_arr_bytes, to_remove):
