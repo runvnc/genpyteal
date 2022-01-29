@@ -15,13 +15,19 @@ yard_conn_descr = "To the north is the front door."
 
 living_room = """Living Room
 This is a small living room with a carpet that should have been replaced 15 years ago. There is a beat-up couch to sit on."""
-living_room_connects = "ESSY"
-living_room_conn_descr = """From here you can enter the study to the east or go back outside (south)."""
+living_room_connects = "ESSYWD"
+living_room_conn_descr = """From here you can enter the study to the east, the dining room (west), or go back outside (south)."""
 
 study = """Study
 There is an Ohio Scientific computer here from the late 1970s. A rickety bookshelf contains some old Dungeons & Dragons books."""
 study_connects = "WL"
 study_conn_descr = "To the west is the living room."  
+
+dining = """Dining Room
+This is a small area with an old wooden table taking up most of the space. The layers of stains on the carpet are truly breathtaking.
+There is a merchant here. He has his goods spread out on the table."""
+dining_connects = "EL"
+study_conn_descr = "To the east is the living room."
 
 computer = """The screen shows the following:
 \033[38;2;138;226;52m[48;2;0;21;0m
@@ -37,11 +43,21 @@ Welcome to 'Mini-Adventure'. For a list of commands, type /menu.
 You probably already knew that though, or you would not have got to this point.
 """
 
+sign = """
+\033[38;5;2mSale!
+Only 0.02 ALGO per item\033[0m
+
+To buy an item (if using the 'avmloop' client), enter the following command:
+\033[38;2;138;226;52m[48;2;0;21;0m
+> /optin 23423423,/pay 0.02,buy junk\033[0m
+"""
+
 @bytes
 def get_connects(l):
   if l == 'Y': return yard_connects
   if l == 'L': return living_room_connects
   if l == 'S': return study_connects
+  if l == 'D': return dining_connects
   return ''
 
 def move_(location, direction):
@@ -78,8 +94,8 @@ def show(l):
   if l == 'Y': printloc(yard, yard_conn_descr, yard_connects)    
   if l == 'L': printloc(living_room, living_room_conn_descr, living_room_connects)
   if l == 'S': printloc(study, study_conn_descr, study_connects)
+  if l == 'D': printloc(dining, dining_conn_descr, dining_connects)
   return 1
-
 
 def show_inventory_():
   inv = StringArray(lgets('inventory'))
@@ -105,7 +121,7 @@ def show_at_location_():
     
     i = 0 
     while i < items.size:
-      print(items[i])
+      print(abi.String(items[i]).value)
       i = i + 1
     
   print(resetColor)
@@ -114,6 +130,7 @@ def printitem(i):
   print(fgWhite)
   if i == 'computer': print(computer)
   if i == 'note': print(note)
+  if i == 'sign': print(sign)
   print(resetColor)
 
 def exists_item(item, loc):
@@ -141,12 +158,16 @@ def encounter():
   print('A')
   print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite)))
   print(resetColor)
-  print('suddenly appears and attacks you with')
+  print('suddenly appears. He attacks you with')
   print(clr('Nonsense', fgRed))
   print(resetColor)
+  print('and runs away.')
   print(clr('You lose [10] hit points', Concat(bgRed, fgWhite)) )
   print(resetColor)
   return 1
+
+def buy(what):
+  
 
 def use_(item:bytes):
   if arr_find(lgets('inventory'), item) == NOT_FOUND:
@@ -200,8 +221,8 @@ def drop_(what:TealType.bytes):
 def init_local_array(name):
   strarr = StringArray("")
   strarr.init()
-  #if name == 'inventory':
-  #  strarr.append('note')
+  if name == 'inventory':
+    strarr.append(ab.String.encode('note'))
   
   lput(name, strarr.serialize())
 
@@ -210,6 +231,8 @@ def init_global_array(name):
   strarr.init()
   if name == 'S_items':
     strarr.append(abi.String.encode('d20'))
+  if name == 'D_items':
+    strarr.append(abi.String.encode('sign'))
 
   gput(name, strarr.serialize())
 
