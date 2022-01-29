@@ -185,21 +185,19 @@ def use_(item:bytes):
   else:
     print("You can't use that.")
   return 1
-
-def takeable_at(item:bytes):
-  if arr_find(ggets(lgets('location')+'_items'), item) != NOT_FOUND:
-    return True
-  else:
-    return False
   
 def take_(what:TealType.bytes):
   inv = StringArray(lgets('inventory'))
-  if not takeable_at(what):
+  ind = 0
+  ind =  arr_find(ggets(lgets('location')+'_items'), what)
+  if ind == NOT_FOUND:
     print('You do not see that here, or it is not something you can take.')
   else:  
     inv.init()
     inv.append(abi.String.encode(what))
     lput('inventory', inv.serialize())
+    gput(lgets('location')+'_items', arr_del(ggets(lgets('location')+'_items'), ind))
+    
     print('You take the ' + what)
   return 1
 
