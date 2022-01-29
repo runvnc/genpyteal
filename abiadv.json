@@ -1,11 +1,11 @@
 {
     "methods": [
         {
-            "name": "take",
+            "name": "move",
             "args": [
                 {
                     "type": "string",
-                    "name": "what"
+                    "name": "dir"
                 }
             ],
             "returns": {
@@ -20,13 +20,6 @@
                     "name": "what"
                 }
             ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "setup",
-            "args": [],
             "returns": {
                 "type": "uint32"
             }
@@ -51,11 +44,18 @@
             }
         },
         {
-            "name": "move",
+            "name": "setup",
+            "args": [],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "drop",
             "args": [
                 {
                     "type": "string",
-                    "name": "dir"
+                    "name": "what"
                 }
             ],
             "returns": {
@@ -63,7 +63,7 @@
             }
         },
         {
-            "name": "drop",
+            "name": "take",
             "args": [
                 {
                     "type": "string",

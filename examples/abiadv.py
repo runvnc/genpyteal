@@ -27,10 +27,10 @@ dining = """Dining Room
 This is a small area with an old wooden table taking up most of the space. The layers of stains on the carpet are truly breathtaking.
 There is a merchant here. He has his goods spread out on the table."""
 dining_connects = "EL"
-study_conn_descr = "To the east is the living room."
+dining_conn_descr = "To the east is the living room."
 
 computer = """The screen shows the following:
-\033[38;2;138;226;52m[48;2;0;21;0m
+\033[38;2;138;226;52m\033[48;2;0;21;0m
 A>dir                             
 A: MOVCPM   COM  
 A: ASMAVM   COM  
@@ -48,7 +48,7 @@ sign = """
 Only 0.02 ALGO per item\033[0m
 
 To buy an item (if using the 'avmloop' client), enter the following command:
-\033[38;2;138;226;52m[48;2;0;21;0m
+\033[38;2;138;226;52m\033[48;2;0;21;0m
 > /optin 23423423,/pay 0.02,buy junk\033[0m
 """
 
@@ -136,6 +136,8 @@ def printitem(i):
 def exists_item(item, loc):
   if loc == 'S' and (item == 'computer' or item == 'books'):
     return True
+  if loc == 'D' and item == 'sign':
+    return True
   if item == 'note':
     return True
   return False
@@ -156,17 +158,14 @@ def examine_(i):
 
 def encounter():
   print('A')
-  print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite)))
-  print(resetColor)
+  print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite, resetColor)))
   print('suddenly appears. He attacks you with')
-  print(clr('Nonsense', fgRed))
-  print(resetColor)
+  print(clr('Nonsense', Concat(fgRed, resetColor)))
   print('and runs away.')
-  print(clr('You lose [10] hit points', Concat(bgRed, fgWhite)) )
-  print(resetColor)
+  print(clr('You lose [10] hit points', Concat(bgRed, fgWhite, resetColor)) )
   return 1
 
-def buy(what):
+#def buy(what):
   
 
 def use_(item:bytes):
@@ -222,7 +221,7 @@ def init_local_array(name):
   strarr = StringArray("")
   strarr.init()
   if name == 'inventory':
-    strarr.append(ab.String.encode('note'))
+    strarr.append(abi.String.encode('note'))
   
   lput(name, strarr.serialize())
 
