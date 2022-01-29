@@ -11,6 +11,7 @@ from pathlib import Path
 ABI = False
 
 scratches_added = {"root":{}}
+txnargs_ = {}
 
 def iterable(obj):
     return isinstance(obj, Iterable)
@@ -253,6 +254,21 @@ def calls(nd):
   except:
     pass
 
+def txnargs(df):
+  i = 0
+  toremove = []
+  for arg in df.arguments:
+    sys.stderr.write('n = ' + arg.name.value)
+    if arg.name.value in ['pay', 'axfer', 'optin', 'acfg', 'txn', 'keyreg', 'afrz', 'appl']:
+      if not (df.name in txnargs_):
+        txnargs_[df.name] = []
+      txnargs_[df.name].append((df.name, arg.name.value, i ))
+      sys.stderr.write('removing ' + arg.name.value)
+      toremove.append(arg)      
+    i += 1
+  for argn in toremove:
+    df.arguments.remove(argn)
+
 def prints(p):
   p.replace(f"Log{p.value.dumps()}")
 
@@ -453,6 +469,7 @@ globals().update(TealType.__members__)
   
   print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
+  
   print(dropReturns(dump_abi_defs(red)))
 
   print(dump_app_ops(red))
@@ -461,6 +478,19 @@ globals().update(TealType.__members__)
   
   code = """
 if __name__ == "__main__":
+
+  def find_method(methods, name):
+    for m in methods:
+      if m['name'] == name:
+        return m['args']
+  
+  def addtxns(l, d):
+    for x in l:
+      xargs = l[x]
+      for a in xargs:
+        (mth, typ, ind) = a
+        find_method(d, mth).insert(ind, {"type": typ}) 
+
   app = ABIApp()
 
   currint = {}
@@ -471,12 +501,17 @@ if __name__ == "__main__":
     pass
     
   currint['methods'] = app.get_interface().dictify()['methods']
+
+  txnargs = json.loads('{txnargs}') 
+  addtxns(txnargs, currint['methods'])
+  
   with open("{fname}.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 
   print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
   """
   code = code.replace('{fname}', fname)
+  code = code.replace('{txnargs}',json.dumps(txnargs_))
   print(code)
 
 def usesabi(red):
@@ -515,6 +550,8 @@ def convert(fname):
     stat('Application')
   progroot = red
 
+  findmap(red, 'def', txnargs)
+ 
   add_root_scratches(red)
 
   findmap(red, 'binary_operator', concats)

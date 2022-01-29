@@ -158,15 +158,21 @@ def examine_(i):
 
 def encounter():
   print('A')
-  print(clr('Bitcoin Maximalist ',Concat(fgRed, bgWhite, resetColor)))
+  print(Concat(fgRed, clr('Bitcoin Maximalist ', bgWhite), fgRed, resetColor))
   print('suddenly appears. He attacks you with')
-  print(clr('Nonsense', Concat(fgRed, resetColor)))
+  print(Concat(clr('Nonsense', fgRed), resetColor))
   print('and runs away.')
-  print(clr('You lose [10] hit points', Concat(bgRed, fgWhite, resetColor)) )
+  print(Concat(clr('You lose [10] hit points', bgRed), fgWhite, resetColor)) 
   return 1
 
-#def buy(what):
+def buy_(what):
+  print("You bought it.")
+  # find pay txn amount
   
+  #Begin()
+  #SetField()
+  #Submit()
+  return 1
 
 def use_(item:bytes):
   if arr_find(lgets('inventory'), item) == NOT_FOUND:
@@ -266,4 +272,6 @@ def examine(what: String) -> abi.Uint32:
 
 def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)
-    
+
+def buy(optin, pay, item: String) -> abi.Uint32:
+  return buy_(abi.String(item.value))    

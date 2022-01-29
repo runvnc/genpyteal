@@ -90,7 +90,7 @@ dining_conn_descr = Bytes("To the east is the living room.")
 
 
 computer = Bytes("""The screen shows the following:
-\033[38;2;138;226;52m[48;2;0;21;0m
+\033[38;2;138;226;52m\033[48;2;0;21;0m
 A>dir                             
 A: MOVCPM   COM  
 A: ASMAVM   COM  
@@ -114,7 +114,7 @@ sign = Bytes("""
 Only 0.02 ALGO per item\033[0m
 
 To buy an item (if using the 'avmloop' client), enter the following command:
-\033[38;2;138;226;52m[48;2;0;21;0m
+\033[38;2;138;226;52m\033[48;2;0;21;0m
 > /optin 23423423,/pay 0.02,buy junk\033[0m
 """)
 
@@ -256,6 +256,9 @@ def exists_item(item, loc):
     	If( And( loc == Bytes('S'), (Or( item == Bytes('computer'), item == Bytes('books') )) ), 
           Return( Int(1) )
          ),
+    	If( And( loc == Bytes('D'), item == Bytes('sign') ), 
+          Return( Int(1) )
+         ),
     	If( item == Bytes('note'), 
           Return( Int(1) )
          ),
@@ -290,14 +293,19 @@ def examine_(i):
 def encounter():
     return  Seq(
     	Log(Bytes('A')),
-    	Log(clr(Bytes('Bitcoin Maximalist '),Concat(fgRed, bgWhite))),
-    	Log(resetColor),
+    	Log(Concat(fgRed, clr(Bytes('Bitcoin Maximalist '), bgWhite), fgRed, resetColor)),
     	Log(Bytes('suddenly appears. He attacks you with')),
-    	Log(clr(Bytes('Nonsense'), fgRed)),
-    	Log(resetColor),
+    	Log(Concat(clr(Bytes('Nonsense'), fgRed), resetColor)),
     	Log(Bytes('and runs away.')),
-    	Log(clr(Bytes('You lose [10] hit points'), Concat(bgRed, fgWhite)) ),
-    	Log(resetColor),
+    	Log(Concat(clr(Bytes('You lose [10] hit points'), bgRed), fgWhite, resetColor)),
+    	Return( Int(1) ) )
+
+
+
+@Subroutine(uint64)
+def buy_(what):
+    return  Seq(
+    	Log(Bytes("You bought it.")),
     	Return( Int(1) ) )
 
 
@@ -330,27 +338,20 @@ def use_(item:bytes):
 
 
 @Subroutine(uint64)
-def takeable_at(item:bytes):
-    return If( arr_find(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))), item) != NOT_FOUND, 
-          Return( Int(1) )
-        , 
-          Return( Int(0) )
-      
-       )
-
-
-
-@Subroutine(uint64)
 def take_(what:TealType.bytes):
+    ind = ScratchVar(TealType.uint64)
     inv = StringArray(lgets(Bytes('inventory')))
     return  Seq(
-    	If( Not( takeable_at(what) ), 
+    	ind.store(Int(0)),
+    	ind.store(arr_find(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))), what)),
+    	If( ind.load() == NOT_FOUND, 
           Log(Bytes('You do not see that here, or it is not something you can take.'))
         , 
             Seq(
     	       inv.init(),
     	       inv.append(abi.String.encode(what)),
     	       App.localPut(Int(0),Bytes('inventory'), inv.serialize()),
+    	       App.globalPut(Concat(lgets(Bytes('location')),Bytes('_items')), arr_del(ggets(Concat(lgets(Bytes('location')),Bytes('_items'))), ind.load())),
     	       Log(Concat(Bytes('You take the '),what)) )
        ),
     	Return( Int(1) ) )
@@ -474,10 +475,29 @@ class ABIApp(DefaultApprove):
   def use(item: String) -> abi.Uint32:
     return ( use_(abi.String(item).value) )
 
+  
+
+  @staticmethod
+  @ABIMethod
+  def buy(item: String) -> abi.Uint32:
+    return ( buy_(abi.String(item.value)) )    
 
 
 
 if __name__ == "__main__":
+
+  def find_method(methods, name):
+    for m in methods:
+      if m['name'] == name:
+        return m['args']
+  
+  def addtxns(l, d):
+    for x in l:
+      xargs = l[x]
+      for a in xargs:
+        (mth, typ, ind) = a
+        find_method(d, mth).insert(ind, {"type": typ}) 
+
   app = ABIApp()
 
   currint = {}
@@ -488,6 +508,12 @@ if __name__ == "__main__":
     pass
     
   currint['methods'] = app.get_interface().dictify()['methods']
+
+  txnargs = json.loads('{"buy": [["buy", "optin", 0], ["buy", "pay", 1]]}') 
+  print('txnargs =')
+  print(txnargs)
+  addtxns(txnargs, currint['methods'])
+  
   with open("abiadv.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 

@@ -1,7 +1,7 @@
 {
     "methods": [
         {
-            "name": "examine",
+            "name": "take",
             "args": [
                 {
                     "type": "string",
@@ -13,13 +13,8 @@
             }
         },
         {
-            "name": "take",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "what"
-                }
-            ],
+            "name": "look",
+            "args": [],
             "returns": {
                 "type": "uint32"
             }
@@ -34,6 +29,31 @@
             ],
             "returns": {
                 "type": "uint32"
+            }
+        },
+        {
+            "name": "buy",
+            "args": [
+                {
+                    "type": "optin"
+                },
+                {
+                    "type": "pay"
+                },
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
             }
         },
         {
@@ -61,15 +81,13 @@
             }
         },
         {
-            "name": "inventory",
-            "args": [],
-            "returns": {
-                "type": "string[]"
-            }
-        },
-        {
-            "name": "look",
-            "args": [],
+            "name": "examine",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
             "returns": {
                 "type": "uint32"
             }
