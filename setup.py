@@ -7,7 +7,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="genpyteal",
-    version="2.2.0",
+    version="3.0.0",
     description="Generate PyTeal with normal Python",
     long_description=README,
     long_description_content_type="text/markdown",

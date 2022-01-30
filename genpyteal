@@ -257,13 +257,14 @@ def calls(nd):
 def txnargs(df):
   i = 0
   toremove = []
-  for arg in df.arguments:
-    sys.stderr.write('n = ' + arg.name.value)
+  for arg in df.arguments:    
     if arg.name.value in ['pay', 'axfer', 'optin', 'acfg', 'txn', 'keyreg', 'afrz', 'appl']:
       if not (df.name in txnargs_):
         txnargs_[df.name] = []
-      txnargs_[df.name].append((df.name, arg.name.value, i ))
-      sys.stderr.write('removing ' + arg.name.value)
+      vall = arg.name.value
+      if arg.name.value == 'optin': vall = 'axfer'
+      
+      txnargs_[df.name].append((df.name, vall, i ))
       toremove.append(arg)      
     i += 1
   for argn in toremove:
@@ -529,7 +530,7 @@ def simpleReplaces(source):
   return source
 
 def convert(fname):
-  sys.stderr.write("genpyteal version 2.2.0\n")
+  sys.stderr.write("genpyteal version 3.0.0\n")
 
   mode = 'Application'
   entry = 'app'

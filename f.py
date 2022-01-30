@@ -510,8 +510,6 @@ if __name__ == "__main__":
   currint['methods'] = app.get_interface().dictify()['methods']
 
   txnargs = json.loads('{"buy": [["buy", "optin", 0], ["buy", "pay", 1]]}') 
-  print('txnargs =')
-  print(txnargs)
   addtxns(txnargs, currint['methods'])
   
   with open("abiadv.json", "w") as f:
