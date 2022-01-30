@@ -15,6 +15,11 @@ from lib.util import *
 
 
 
+JUNK_ASSET = 575753250
+
+
+
+
 fgGreen = Bytes("\033[38;5;2m")
 
 
@@ -311,6 +316,45 @@ def buy_(what):
 
 
 @Subroutine(uint64)
+def find_axfer(assetid):
+    found = ScratchVar(TealType.uint64)
+    i = ScratchVar(TealType.uint64)
+    return  Seq(
+    	i.store(Int(0)),
+    	found.store(Int(0)),
+    	While( i.load() < Global.group_size()).Do(
+          Seq(
+    	     If( (And( Gtxn[i.load()].asset_id == assetid, And( Gtxn[i.load()].asset_receiver() == Global.current_application_address(), Gtxn[i.load()].asset_amount() == Int(1) ) )), 
+                   found.store(Int(1))
+                  ),
+    	     i.store(i.load() + Int(1)) )
+       ),
+    	Return( found.load() ) )
+
+
+
+@Subroutine(uint64)
+def offer_(what):
+    return  Seq(
+    	If( what == Bytes("junk"), 
+            Seq(
+    	       InnerTxnBuilder.Begin(),
+    	       InnerTxnBuilder.SetFields({
+                 TxnField.type_enum: TxnType.AssetTransfer,
+                 TxnField.sender: Global.current_application_address(),
+                 TxnField.amount: Int(0),
+                 TxnField.receiver: Global.current_application_address(),
+                 TxnField.xfer_asset: Int(JUNK_ASSET)
+               }),
+    	       InnerTxnBuilder.Submit(),
+    	       Log(Bytes("The merchant will buy your item for 0.01 ALGO.")),
+    	       Return( Int(1) ) )
+       ),
+    	Return( Int(0) ) )
+
+
+
+@Subroutine(uint64)
 def use_(item:bytes):
     roll = ScratchVar(TealType.uint64)
     return  Seq(
@@ -482,6 +526,13 @@ class ABIApp(DefaultApprove):
   def buy(item: String) -> abi.Uint32:
     return ( buy_(abi.String(item.value)) )    
 
+  
+
+  @staticmethod
+  @ABIMethod
+  def offer(item: String) -> abi.Uint32:
+    return ( offer_(abi.String(item.value)) )    
+
 
 
 if __name__ == "__main__":
@@ -509,7 +560,7 @@ if __name__ == "__main__":
     
   currint['methods'] = app.get_interface().dictify()['methods']
 
-  txnargs = json.loads('{"buy": [["buy", "optin", 0], ["buy", "pay", 1]]}') 
+  txnargs = json.loads('{"buy": [["buy", "axfer", 0], ["buy", "pay", 1]]}') 
   addtxns(txnargs, currint['methods'])
   
   with open("abiadv.json", "w") as f:

@@ -1,5 +1,7 @@
 from lib.util import *
 
+JUNK_ASSET = 575753250
+
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgPurple = "\033[38;5;35m"
@@ -166,13 +168,41 @@ def encounter():
   return 1
 
 def buy_(what):
-  print("You bought it.")
+  
   # find pay txn amount
   
   #Begin()
   #SetField()
   #Submit()
+  print("You bought it.")
   return 1
+
+def find_axfer(assetid):
+  i = 0
+  found = 0
+  while i < Global.group_size:
+    if (Gtxn[i].asset_id == assetid and 
+        Gtxn[i].asset_receiver == Global.current_application_address and 
+        Gtxn[i].asset_amount == 1):
+      found = True
+    i = i + 1
+      
+  return found
+  
+def offer_(what):
+  if what == "junk":
+    Begin()
+    SetFields({
+      TxnField.type_enum: TxnType.AssetTransfer,
+      TxnField.sender: Global.current_application_address,
+      TxnField.amount: 0,
+      TxnField.receiver: Global.current_application_address,
+      TxnField.xfer_asset: Txn.assets[0]
+    })
+    Submit()   
+    print("The merchant will buy your item for 0.01 ALGO.")
+    return 1
+  return 0
 
 def use_(item:bytes):
   if arr_find(lgets('inventory'), item) == NOT_FOUND:
@@ -275,3 +305,6 @@ def use(item: String) -> abi.Uint32:
 
 def buy(optin, pay, item: String) -> abi.Uint32:
   return buy_(abi.String(item.value))    
+
+def offer(item: String) -> abi.Uint32:
+  return offer_(abi.String(item.value))    

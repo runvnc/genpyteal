@@ -1,7 +1,39 @@
 {
+    "name": "abiadv",
+    "networks": {
+        "default": {
+            "appID": 569484941
+        }
+    },
     "methods": [
         {
-            "name": "examine",
+            "name": "use",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
+            }
+        },
+        {
+            "name": "setup",
+            "args": [],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "take",
             "args": [
                 {
                     "type": "string",
@@ -31,19 +63,14 @@
             }
         },
         {
-            "name": "move",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "dir"
-                }
-            ],
+            "name": "look",
+            "args": [],
             "returns": {
                 "type": "uint32"
             }
         },
         {
-            "name": "use",
+            "name": "offer",
             "args": [
                 {
                     "type": "string",
@@ -67,14 +94,7 @@
             }
         },
         {
-            "name": "inventory",
-            "args": [],
-            "returns": {
-                "type": "string[]"
-            }
-        },
-        {
-            "name": "take",
+            "name": "examine",
             "args": [
                 {
                     "type": "string",
@@ -86,15 +106,13 @@
             }
         },
         {
-            "name": "look",
-            "args": [],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "setup",
-            "args": [],
+            "name": "move",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "dir"
+                }
+            ],
             "returns": {
                 "type": "uint32"
             }
