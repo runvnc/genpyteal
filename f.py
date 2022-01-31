@@ -20,6 +20,11 @@ JUNK_ASSET = 575753250
 
 
 
+junk_count = AssetHolding.balance(Global.current_application_address(), Txn.assets[0])
+
+
+
+
 fgGreen = Bytes("\033[38;5;2m")
 
 
@@ -218,6 +223,16 @@ def show_inventory_():
 
 
 @Subroutine(TealType.none)
+def show_junk():
+    return If( junk_count.hasValue(), 
+          Log(Concat(numtostr(junk_count.value()),Bytes(" Garage Sale Junk")))
+    
+    
+       )
+
+
+
+@Subroutine(TealType.none)
 def show_at_location_():
     i = ScratchVar(TealType.uint64)
     n = ScratchVar(TealType.uint64)
@@ -235,7 +250,10 @@ def show_at_location_():
                    Seq(
     	              Log(abi.String(items[i.load()]).value),
     	              i.store(i.load() + Int(1)) )
-            ) )
+                ),
+    	       If( lgets(Bytes('location')) == Bytes('D'), 
+                     show_junk()
+                  ) )
        ),
     	Log(resetColor) )
 
@@ -342,12 +360,12 @@ def offer_(asset, what):
     	       InnerTxnBuilder.SetFields({
                  TxnField.type_enum: TxnType.AssetTransfer,
                  TxnField.sender: Global.current_application_address(),
-                 TxnField.amount: Int(0),
-                 TxnField.receiver: Global.current_application_address(),
+                 TxnField.asset_amount: Int(0),
+                 TxnField.asset_receiver: Global.current_application_address(),
                  TxnField.xfer_asset: Txn.assets[asset]
                }),
     	       InnerTxnBuilder.Submit(),
-    	       Log(Bytes("The merchant will buy your item for 0.01 ALGO.")),
+    	       Log(Bytes("The merchant will take your junk.")),
     	       Return( Int(1) ) )
        ),
     	Return( Int(0) ) )

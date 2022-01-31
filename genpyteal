@@ -545,7 +545,8 @@ def simpleReplaces(source):
   source = source.replace('len(', 'Len(')
   source = source.replace('lput(', 'App.localPut(0,')
   source = source.replace('gput(', 'App.globalPut(')
-  
+  source = source.replace('holding(', 'AssetHolding.balance(')
+  source = source.replace('app_address','Global.current_application_address()')
   return source
 
 def convert(fname):

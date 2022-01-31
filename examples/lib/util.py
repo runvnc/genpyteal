@@ -14,6 +14,12 @@ asset = abi.Uint8
 account = abi.Uint8
 application = abi.Uint8
 
+def asset_bal(addr, asset_index):
+  if holding(app_addr, Txn.assets[asset_index]).hasValue():
+    return holding(app_addr, Txn.assets[asset_index]).value()
+  else:
+    return 0
+
 
 @bytes
 def clr(s, ansi):

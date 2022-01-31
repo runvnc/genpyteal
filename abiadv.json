@@ -1,6 +1,18 @@
 {
     "methods": [
         {
+            "name": "examine",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
             "name": "look",
             "args": [],
             "returns": {
@@ -8,13 +20,39 @@
             }
         },
         {
-            "name": "drop",
+            "name": "move",
             "args": [
                 {
                     "type": "string",
-                    "name": "what"
+                    "name": "dir"
                 }
             ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "use",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
+            }
+        },
+        {
+            "name": "setup",
+            "args": [],
             "returns": {
                 "type": "uint32"
             }
@@ -35,10 +73,15 @@
             }
         },
         {
-            "name": "inventory",
-            "args": [],
+            "name": "drop",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
             "returns": {
-                "type": "string[]"
+                "type": "uint32"
             }
         },
         {
@@ -54,37 +97,6 @@
             }
         },
         {
-            "name": "setup",
-            "args": [],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "examine",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "what"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "move",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "dir"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
             "name": "buy",
             "args": [
                 {
@@ -93,18 +105,6 @@
                 {
                     "type": "pay"
                 },
-                {
-                    "type": "string",
-                    "name": "item"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "use",
-            "args": [
                 {
                     "type": "string",
                     "name": "item"

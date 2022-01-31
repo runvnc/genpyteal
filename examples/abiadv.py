@@ -2,6 +2,7 @@ from lib.util import *
 
 JUNK_ASSET = 575753250
 
+
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgPurple = "\033[38;5;35m"
@@ -112,6 +113,10 @@ def show_inventory_():
   print(resetColor)
   return 1
 
+def show_junk():
+  print(numtostr(asset_bal(app_addr, 0)) + " Garage Sale Junk")
+
+
 def show_at_location_():
   items = StringArray(ggets(lgets('location') + '_items'))
   items.init()
@@ -125,6 +130,9 @@ def show_at_location_():
     while i < items.size:
       print(abi.String(items[i]).value)
       i = i + 1
+
+    if lgets('location') == 'D':
+      show_junk()
     
   print(resetColor)
 
@@ -195,12 +203,12 @@ def offer_(asset, what):
     SetFields({
       TxnField.type_enum: TxnType.AssetTransfer,
       TxnField.sender: Global.current_application_address,
-      TxnField.amount: 0,
-      TxnField.receiver: Global.current_application_address,
+      TxnField.asset_amount: 0,
+      TxnField.asset_receiver: Global.current_application_address,
       TxnField.xfer_asset: Txn.assets[asset]
     })
     Submit()   
-    print("The merchant will buy your item for 0.01 ALGO.")
+    print("The merchant will take your junk.")
     return 1
   return 0
 
