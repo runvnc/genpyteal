@@ -20,11 +20,6 @@ JUNK_ASSET = 575753250
 
 
 
-junk_count = AssetHolding.balance(Global.current_application_address(), Txn.assets[0])
-
-
-
-
 fgGreen = Bytes("\033[38;5;2m")
 
 
@@ -223,13 +218,8 @@ def show_inventory_():
 
 
 @Subroutine(TealType.none)
-def show_junk():
-    return If( junk_count.hasValue(), 
-          Log(Concat(numtostr(junk_count.value()),Bytes(" Garage Sale Junk")))
-    
-    
-       )
-
+def show_junk():    
+  return Log(Concat(numtostr( asset_bal(Global.current_application_address(), Int(0))),Bytes(" Garage Sale Junk")))
 
 
 @Subroutine(TealType.none)

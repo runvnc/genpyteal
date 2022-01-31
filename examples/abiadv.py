@@ -2,7 +2,6 @@ from lib.util import *
 
 JUNK_ASSET = 575753250
 
-
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgPurple = "\033[38;5;35m"
@@ -113,9 +112,8 @@ def show_inventory_():
   print(resetColor)
   return 1
 
-def show_junk():
-  print(numtostr(asset_bal(app_addr, 0)) + " Garage Sale Junk")
-
+def show_junk():    
+  print(numtostr( asset_bal(app_address, 0)) + " Garage Sale Junk")
 
 def show_at_location_():
   items = StringArray(ggets(lgets('location') + '_items'))

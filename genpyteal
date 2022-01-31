@@ -43,7 +43,7 @@ def getScratch(red):
   
   s2 = red.find_all('name')
   #if isinstance(s2, list):
-  s2 = s2.filter(lambda x: x.dumps() == 'maybe')
+  s2 = s2.filter(lambda x: x.dumps() == 'maybe' or 'asset_bal' in x.dumps())
   #else:
   #  sys.stderr.write('not filtering s2')
   if s or s2:

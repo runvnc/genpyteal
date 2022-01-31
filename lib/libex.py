@@ -1,5 +1,12 @@
 from pyteal import *
 
+def asset_bal(addr, asset_index):
+  b = AssetHolding.balance(addr, Txn.assets[asset_index])
+  return Seq(
+     b, 
+     If( b.hasValue(), b.value(), Int(0) )
+   )
+
 @Subroutine(TealType.anytype)
 def ggeti(key: TealType.bytes) -> Expr:
     maybe = App.globalGetEx(Int(0), key)
