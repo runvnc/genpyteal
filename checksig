@@ -1,0 +1,7 @@
+#!/bin/env python3
+
+from pytealutils.applications.application import hashy
+
+import sys
+
+print(hashy(sys.argv[1]))

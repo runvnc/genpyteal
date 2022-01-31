@@ -12,6 +12,7 @@ ABI = False
 
 scratches_added = {"root":{}}
 txnargs_ = {}
+refargs_ = {}
 
 def iterable(obj):
     return isinstance(obj, Iterable)
@@ -270,6 +271,19 @@ def txnargs(df):
   for argn in toremove:
     df.arguments.remove(argn)
 
+def refargs(df):
+  i = 0
+  toremove = []
+  for arg in df.arguments:    
+    if arg.name.value in ['account', 'asset', 'application']:
+      if not (df.name in refargs_):
+        refargs_[df.name] = []      
+      refargs_[df.name].append((df.name, arg.name.value, i ))
+      toremove.append(arg)
+    i += 1
+  for argn in toremove:
+    df.arguments.remove(argn)
+
 def prints(p):
   p.replace(f"Log{p.value.dumps()}")
 
@@ -395,6 +409,7 @@ def strings(i):
 
 progroot = 0
 
+
 def abimethod(d):
   if hasattr(d, 'return_annotation') and d.return_annotation is not None:
     del d.decorators[0]
@@ -505,6 +520,9 @@ if __name__ == "__main__":
 
   txnargs = json.loads('{txnargs}') 
   addtxns(txnargs, currint['methods'])
+
+  #refargs = json.loads('{refargs}') 
+  #addtxns(refargs, currint['methods'])
   
   with open("{fname}.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
@@ -513,6 +531,7 @@ if __name__ == "__main__":
   """
   code = code.replace('{fname}', fname)
   code = code.replace('{txnargs}',json.dumps(txnargs_))
+  #code = code.replace('{refargs}',json.dumps(refargs_))
   print(code)
 
 def usesabi(red):
@@ -552,6 +571,7 @@ def convert(fname):
   progroot = red
 
   findmap(red, 'def', txnargs)
+  #findmap(red, 'def', refargs)
  
   add_root_scratches(red)
 

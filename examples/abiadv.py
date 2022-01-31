@@ -189,7 +189,7 @@ def find_axfer(assetid):
       
   return found
   
-def offer_(what):
+def offer_(asset, what):
   if what == "junk":
     Begin()
     SetFields({
@@ -197,7 +197,7 @@ def offer_(what):
       TxnField.sender: Global.current_application_address,
       TxnField.amount: 0,
       TxnField.receiver: Global.current_application_address,
-      TxnField.xfer_asset: Txn.assets[0]
+      TxnField.xfer_asset: Txn.assets[asset]
     })
     Submit()   
     print("The merchant will buy your item for 0.01 ALGO.")
@@ -304,7 +304,7 @@ def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)
 
 def buy(optin, pay, item: String) -> abi.Uint32:
-  return buy_(abi.String(item.value))    
+  return buy_(abi.String(item).value)    
 
-def offer(item: String) -> abi.Uint32:
-  return offer_(abi.String(item.value))    
+def offer(asset, item: String) -> abi.Uint32:
+  return offer_(Int(0), abi.String(item).value)    

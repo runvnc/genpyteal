@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List
-from inspect import signature
+from inspect import signature, _empty
 from functools import wraps
 from Cryptodome.Hash import SHA512
 import base64
+import sys
 
 from algosdk import abi
 from algosdk.account import address_from_private_key
@@ -45,9 +46,20 @@ def ABIMethod(func):
 
     args1 = []
     for v in sig.parameters.values():
-      args1.append(( v.annotation.__str__(), v.name ))
+      if v.annotation != _empty:
+        args1.append(( v.annotation.__str__(), v.name ))
+      else:
+        args1.append(( v.name, '' ))
 
-    args = [tealabi.abiTypeName(v.annotation) for v in sig.parameters.values()]
+    #args = [tealabi.abiTypeName(v.annotation) for v in sig.parameters.values()]
+
+    args = []
+    for v in sig.parameters.values():
+      if v.name in ['asset', 'account', 'application']:
+        args.append(v.name)
+      else:
+        args.append(tealabi.abiTypeName(v.annotation))
+    
     returns = sig.return_annotation
 
     method = "{}({}){}".format(
@@ -59,8 +71,15 @@ def ABIMethod(func):
     setattr(func, "abi_returns", abi.Returns(tealabi.abiTypeName(returns)))
 
     # Get the types specified in the method
-    abi_codec = [v.annotation for v in sig.parameters.values()]
+    #abi_codec = [v.annotation for v in sig.parameters.values()]
 
+    abi_codec = []
+    for v in sig.parameters.values():
+      if v.name in ['asset', 'account', 'application']:
+        abi_codec.append(Uint8)
+      else:
+        abi_codec.append(v.annotation)
+    
     @wraps(func)
     @Subroutine(TealType.uint64)
     def wrapper() -> Expr:

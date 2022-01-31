@@ -10,6 +10,11 @@ StringArray = abi.DynamicArray[abi.String]
 
 NOT_FOUND = Int(999)
 
+asset = abi.Uint8
+account = abi.Uint8
+application = abi.Uint8
+
+
 @bytes
 def clr(s, ansi):
   return Concat(ansi, s)

@@ -334,7 +334,7 @@ def find_axfer(assetid):
 
 
 @Subroutine(uint64)
-def offer_(what):
+def offer_(asset, what):
     return  Seq(
     	If( what == Bytes("junk"), 
             Seq(
@@ -344,7 +344,7 @@ def offer_(what):
                  TxnField.sender: Global.current_application_address(),
                  TxnField.amount: Int(0),
                  TxnField.receiver: Global.current_application_address(),
-                 TxnField.xfer_asset: Int(JUNK_ASSET)
+                 TxnField.xfer_asset: Txn.assets[asset]
                }),
     	       InnerTxnBuilder.Submit(),
     	       Log(Bytes("The merchant will buy your item for 0.01 ALGO.")),
@@ -524,14 +524,14 @@ class ABIApp(DefaultApprove):
   @staticmethod
   @ABIMethod
   def buy(item: String) -> abi.Uint32:
-    return ( buy_(abi.String(item.value)) )    
+    return ( buy_(abi.String(item).value) )    
 
   
 
   @staticmethod
   @ABIMethod
-  def offer(item: String) -> abi.Uint32:
-    return ( offer_(abi.String(item.value)) )    
+  def offer(asset, item: String) -> abi.Uint32:
+    return ( offer_(Int(0), abi.String(item).value) )    
 
 
 
@@ -562,6 +562,9 @@ if __name__ == "__main__":
 
   txnargs = json.loads('{"buy": [["buy", "axfer", 0], ["buy", "pay", 1]]}') 
   addtxns(txnargs, currint['methods'])
+
+  #refargs = json.loads('{refargs}') 
+  #addtxns(refargs, currint['methods'])
   
   with open("abiadv.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
