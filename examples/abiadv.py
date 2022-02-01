@@ -330,7 +330,7 @@ def examine(what: String) -> abi.Uint32:
 def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)
 
-def buy(asset, item: String, optin, pay ) -> abi.Uint32:
+def buy(optin, pay, asset, item: String ) -> abi.Uint32:
   return buy_(asset, abi.String(item).value)    
 
 def offer(asset, item: String) -> abi.Uint32:

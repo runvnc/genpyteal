@@ -6,6 +6,8 @@ from Cryptodome.Hash import SHA512
 import base64
 import sys
 
+import json
+
 from algosdk import abi
 from algosdk.account import address_from_private_key
 from algosdk.v2client import algod
@@ -23,11 +25,15 @@ from algosdk.atomic_transaction_composer import (
     TransactionWithSigner,
 )
 
+sargs = None
+
 from pyteal import *
 
 from .. import abi as tealabi
 
-sargs = None
+def set_tx_args(args):
+  global sargs
+  sargs = args
 
 # Utility function to take the string version of a
 # method signature and return the 4 byte selector
@@ -44,17 +50,9 @@ def ABIReturn(b: TealType.bytes) -> Expr:
 
 def ABIMethod(func):
     sig = signature(func)
-
-    global txnargs_
-    print(' . . . . . . . .  .  . ..')
-    print(sargs)
-
-    txnargs = ['axfer', 'pay', 'keyreg', 'txn', 'acfg', 'afrz', 'appl']
     
     args1 = []
     for v in sig.parameters.values():
-      if v.name in txnargs:
-        continue
       if v.annotation != _empty:
         args1.append(( v.annotation.__str__(), v.name ))
       else:
@@ -63,32 +61,36 @@ def ABIMethod(func):
     #args = [tealabi.abiTypeName(v.annotation) for v in sig.parameters.values()]
     
     args = []
+    
+    if sargs != None and func.__name__ in sargs:
+      for a in sargs[func.__name__]:
+        args.append(a)
+
     for v in sig.parameters.values():
-      if v.name in ['asset', 'account', 'application'] or v.name in txnargs:
+      if v.name in ['asset', 'account', 'application']:
         args.append(v.name)
       else:
         args.append(tealabi.abiTypeName(v.annotation))
     
     returns = sig.return_annotation
-    
+
     method = "{}({}){}".format(
         func.__name__, ",".join(args), tealabi.abiTypeName(returns)
     )
+
     
-    print('-----------------------')
-    print('method = ', method)
     setattr(func, "abi_selector", hashy(method))
     setattr(func, "abi_args", [abi.Argument(type, name) for (type, name) in args1])
     setattr(func, "abi_returns", abi.Returns(tealabi.abiTypeName(returns)))
 
     # Get the types specified in the method
     #abi_codec = [v.annotation for v in sig.parameters.values()]
-    print('abi_args =', func.abi_args)
+
     abi_codec = []
     for v in sig.parameters.values():
       if v.name in ['asset', 'account', 'application']:
         abi_codec.append(Uint8)
-      elif not (v.name in txnargs):
+      else:  # not (v.name in txnargs)
         abi_codec.append(v.annotation)
     
     @wraps(func)

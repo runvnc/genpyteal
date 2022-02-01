@@ -5,7 +5,7 @@ from typing import Tuple
 from pyteal import *
 
 from pytealutils.applications import ABIMethod, DefaultApprove
-from pytealutils.applications.application import sargs
+from pytealutils.applications.application import set_tx_args
 
 from pytealutils import abi
 
@@ -504,7 +504,7 @@ def setup_():
 
 
 
-sargs = {"buy": [["buy", "axfer", 2], ["buy", "pay", 3]]}
+set_tx_args({"buy": ["axfer", "pay"]})
 
 class ABIApp(DefaultApprove):
 
