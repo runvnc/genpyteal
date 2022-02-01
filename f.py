@@ -319,22 +319,25 @@ def encounter():
 
 @Subroutine(uint64)
 def buy_(asset, what):
-  return ( Int(1) )
+    asset_bal
+    return  Seq(
+    	If( find_payment(Int(20000)), 
+            Seq(
+    	       InnerTxnBuilder.Begin(),
+    	       InnerTxnBuilder.SetFields({
+                 TxnField.type_enum: TxnType.AssetTransfer,
+                 TxnField.sender: Global.current_application_address(),
+                 TxnField.asset_amount: Int(1),
+                 TxnField.asset_receiver: Txn.sender(),
+                 TxnField.xfer_asset: Txn.assets[Btoi(asset)]
+               }),
+    	       InnerTxnBuilder.Submit(),
+    	       Log(Bytes("You bought it.")),
+    	       App.localPut(Int(0),Bytes('junk_count'), asset_bal(Txn.sender(), Int(0))),
+    	       Return( Int(1) ) )
+       ),
+    	Return( Int(0) ) )
 
-  #if find_payment(20000):
-  #  Begin()
-  #  SetFields({
-  #    TxnField.type_enum: TxnType.AssetTransfer,
-  #    TxnField.sender: Global.current_application_address,
-  #    TxnField.asset_amount: 1,
-  #    TxnField.asset_receiver: Txn.sender,
-  #    TxnField.xfer_asset: Txn.assets[asset]
-  #  })
-  #  Submit()
-  #  print("You bought it.")
-  #  App.localPut(0,'junk_count', asset_bal(Txn.sender, 0))
-  #  return 1
-  #return 0
 
 
 @Subroutine(uint64)
@@ -476,15 +479,16 @@ def init_local_array(name):
 
 
 @Subroutine(TealType.none)
-def init_global_array(name):
+def init_global_array(name, df):
     strarr = StringArray(Bytes(""))
     return  Seq(
     	strarr.init(),
-    	If( name == Bytes('S_items'), 
-          strarr.append(abi.String.encode(Bytes('d20')))
-         ),
-    	If( name == Bytes('D_items'), 
-          strarr.append(abi.String.encode(Bytes('sign')))
+    	If( df != Bytes(''), 
+          strarr.append(abi.String.encode(df))
+        #if name == 'S_items':
+        #  strarr.append(abi.String.encode('d20'))
+        #if name == 'D_items':
+        #  strarr.append(abi.String.encode('sign'))
          ),
     	App.globalPut(name, strarr.serialize()) )
 
@@ -496,10 +500,10 @@ def setup_():
     	App.localPut(Int(0),Bytes('location'), Bytes('Y')),
     	App.localPut(Int(0),Bytes('junk_count'), Int(0)),
     	init_local_array(Bytes('inventory')),
-    	init_global_array(Bytes('Y_items')),
-    	init_global_array(Bytes('L_items')),
-    	init_global_array(Bytes('S_items')),
-    	init_global_array(Bytes('D_items')),
+    	init_global_array(Bytes('Y_items'), Bytes('')),
+    	init_global_array(Bytes('L_items'), Bytes('')),
+    	init_global_array(Bytes('S_items'), Bytes('d20')),
+    	init_global_array(Bytes('D_items'), Bytes('sign')),
     	Return( Int(1) ) )
 
 
@@ -574,7 +578,7 @@ class ABIApp(DefaultApprove):
   @staticmethod
   @ABIMethod
   def offer(asset, item: String) -> abi.Uint32:
-    return ( offer_(Int(0), abi.String(item).value) )    
+    return ( offer_(asset, abi.String(item).value) )    
 
 
 

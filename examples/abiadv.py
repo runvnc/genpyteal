@@ -173,23 +173,21 @@ def encounter():
   print(Concat(clr('You lose [10] hit points', bgRed), fgWhite, resetColor)) 
   return 1
 
-def buy_(asset, what):
-  return 1
-  
-  #if find_payment(20000):
-  #  Begin()
-  #  SetFields({
-  #    TxnField.type_enum: TxnType.AssetTransfer,
-  #    TxnField.sender: Global.current_application_address,
-  #    TxnField.asset_amount: 1,
-  #    TxnField.asset_receiver: Txn.sender,
-  #    TxnField.xfer_asset: Txn.assets[asset]
-  #  })
-  #  Submit()
-  #  print("You bought it.")
-  #  lput('junk_count', asset_bal(Txn.sender, 0))
-  #  return 1
-  #return 0
+def buy_(asset, what):  
+  if find_payment(20000):
+    Begin()
+    SetFields({
+      TxnField.type_enum: TxnType.AssetTransfer,
+      TxnField.sender: app_address,
+      TxnField.asset_amount: 1,
+      TxnField.asset_receiver: Txn.sender,
+      TxnField.xfer_asset: Txn.assets[Btoi(asset)]
+    })
+    Submit()
+    print("You bought it.")
+    lput('junk_count', asset_bal(Txn.sender, 0))
+    return 1
+  return 0
 
 def find_payment(amount):
   i = 0
@@ -285,24 +283,27 @@ def init_local_array(name):
   
   lput(name, strarr.serialize())
 
-def init_global_array(name):
+def init_global_array(name, df):
   strarr = StringArray("")
   strarr.init()
-  if name == 'S_items':
-    strarr.append(abi.String.encode('d20'))
-  if name == 'D_items':
-    strarr.append(abi.String.encode('sign'))
+  if df != '':
+    strarr.append(abi.String.encode(df))
+  #if name == 'S_items':
+  #  strarr.append(abi.String.encode('d20'))
+  #if name == 'D_items':
+  #  strarr.append(abi.String.encode('sign'))
 
   gput(name, strarr.serialize())
+
 
 def setup_():
   lput('location', 'Y')
   lput('junk_count', 0)
   init_local_array('inventory')
-  init_global_array('Y_items')
-  init_global_array('L_items')
-  init_global_array('S_items')
-  init_global_array('D_items')
+  init_global_array('Y_items', '')
+  init_global_array('L_items', '')
+  init_global_array('S_items', 'd20')  
+  init_global_array('D_items', 'sign')
   
   return 1
 
@@ -334,4 +335,4 @@ def buy(optin, pay, asset, item: String ) -> abi.Uint32:
   return buy_(asset, abi.String(item).value)    
 
 def offer(asset, item: String) -> abi.Uint32:
-  return offer_(Int(0), abi.String(item).value)    
+  return offer_(asset, abi.String(item).value)    

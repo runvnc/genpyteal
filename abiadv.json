@@ -16,20 +16,11 @@
             }
         },
         {
-            "name": "buy",
+            "name": "move",
             "args": [
                 {
-                    "type": "axfer"
-                },
-                {
-                    "type": "pay"
-                },
-                {
-                    "type": "asset"
-                },
-                {
                     "type": "string",
-                    "name": "item"
+                    "name": "dir"
                 }
             ],
             "returns": {
@@ -49,42 +40,18 @@
             }
         },
         {
-            "name": "examine",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "what"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "look",
+            "name": "setup",
             "args": [],
             "returns": {
                 "type": "uint32"
             }
         },
         {
-            "name": "take",
+            "name": "examine",
             "args": [
                 {
                     "type": "string",
                     "name": "what"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "move",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "dir"
                 }
             ],
             "returns": {
@@ -111,8 +78,41 @@
             }
         },
         {
-            "name": "setup",
+            "name": "buy",
+            "args": [
+                {
+                    "type": "axfer"
+                },
+                {
+                    "type": "pay"
+                },
+                {
+                    "type": "asset"
+                },
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "look",
             "args": [],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "take",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
             "returns": {
                 "type": "uint32"
             }

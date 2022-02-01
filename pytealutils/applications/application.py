@@ -161,7 +161,7 @@ class Application(ABC):
         ]
 
         # Hack to add budget padding
-        routes.append([Txn.application_args[0] == hashy("pad()void"), Int(1)])
+        #routes.append([Txn.application_args[0] == hashy("pad()void"), Int(1)])
 
         handlers = [
             [Txn.application_id() == Int(0), self.create()],
