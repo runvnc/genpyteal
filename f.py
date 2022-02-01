@@ -5,6 +5,8 @@ from typing import Tuple
 from pyteal import *
 
 from pytealutils.applications import ABIMethod, DefaultApprove
+from pytealutils.applications.application import sargs
+
 from pytealutils import abi
 
 globals().update(TealType.__members__)
@@ -120,7 +122,7 @@ Only 0.02 ALGO per item\033[0m
 
 To buy an item (if using the 'avmloop' client), enter the following command:
 \033[38;2;138;226;52m\033[48;2;0;21;0m
-> /optin 23423423,/pay 0.02,buy junk\033[0m
+> /axfer 23423423,/pay 0.02,buy junk\033[0m
 """)
 
 
@@ -205,6 +207,9 @@ def show_inventory_():
     return  Seq(
     	Log(Bytes("You are carrying:")),
     	Log(fgYellow),
+    	If( lgeti(Bytes('junk_count')) > Int(0), 
+          Log(Concat(numtostr(lgeti(Bytes('junk_count'))),Bytes(' Garage Sale Junk')))
+         ),
     	inv.init(),
     	i.store(Int(0)),
     	While( i.load() < inv.size.load()).Do(
@@ -240,10 +245,7 @@ def show_at_location_():
                    Seq(
     	              Log(abi.String(items[i.load()]).value),
     	              i.store(i.load() + Int(1)) )
-                ),
-    	       If( lgets(Bytes('location')) == Bytes('D'), 
-                     show_junk()
-                  ) )
+            ) )
        ),
     	Log(resetColor) )
 
@@ -316,10 +318,40 @@ def encounter():
 
 
 @Subroutine(uint64)
-def buy_(what):
+def buy_(asset, what):
+  return ( Int(1) )
+
+  #if find_payment(20000):
+  #  Begin()
+  #  SetFields({
+  #    TxnField.type_enum: TxnType.AssetTransfer,
+  #    TxnField.sender: Global.current_application_address,
+  #    TxnField.asset_amount: 1,
+  #    TxnField.asset_receiver: Txn.sender,
+  #    TxnField.xfer_asset: Txn.assets[asset]
+  #  })
+  #  Submit()
+  #  print("You bought it.")
+  #  App.localPut(0,'junk_count', asset_bal(Txn.sender, 0))
+  #  return 1
+  #return 0
+
+
+@Subroutine(uint64)
+def find_payment(amount):
+    found = ScratchVar(TealType.uint64)
+    i = ScratchVar(TealType.uint64)
     return  Seq(
-    	Log(Bytes("You bought it.")),
-    	Return( Int(1) ) )
+    	i.store(Int(0)),
+    	found.store(Int(0)),
+    	While( i.load() < Global.group_size()).Do(
+          Seq(
+    	     If( (And( Gtxn[i.load()].sender() == Txn.sender(), And( Gtxn[i.load()].receiver() == Global.current_application_address(), Gtxn[i.load()].amount() == amount ) )), 
+                   found.store(Int(1))
+                  ),
+    	     i.store(i.load() + Int(1)) )
+       ),
+    	Return( found.load() ) )
 
 
 
@@ -462,6 +494,7 @@ def init_global_array(name):
 def setup_():
     return  Seq(
     	App.localPut(Int(0),Bytes('location'), Bytes('Y')),
+    	App.localPut(Int(0),Bytes('junk_count'), Int(0)),
     	init_local_array(Bytes('inventory')),
     	init_global_array(Bytes('Y_items')),
     	init_global_array(Bytes('L_items')),
@@ -470,6 +503,8 @@ def setup_():
     	Return( Int(1) ) )
 
 
+
+sargs = {"buy": [["buy", "axfer", 2], ["buy", "pay", 3]]}
 
 class ABIApp(DefaultApprove):
 
@@ -531,8 +566,8 @@ class ABIApp(DefaultApprove):
 
   @staticmethod
   @ABIMethod
-  def buy(item: String) -> abi.Uint32:
-    return ( buy_(abi.String(item).value) )    
+  def buy(asset, item: String ) -> abi.Uint32:
+    return ( buy_(asset, abi.String(item).value) )    
 
   
 
@@ -543,19 +578,9 @@ class ABIApp(DefaultApprove):
 
 
 
-if __name__ == "__main__":
 
-  def find_method(methods, name):
-    for m in methods:
-      if m['name'] == name:
-        return m['args']
   
-  def addtxns(l, d):
-    for x in l:
-      xargs = l[x]
-      for a in xargs:
-        (mth, typ, ind) = a
-        find_method(d, mth).insert(ind, {"type": typ}) 
+if __name__ == "__main__":
 
   app = ABIApp()
 
@@ -567,13 +592,7 @@ if __name__ == "__main__":
     pass
     
   currint['methods'] = app.get_interface().dictify()['methods']
-
-  txnargs = json.loads('{"buy": [["buy", "axfer", 0], ["buy", "pay", 1]]}') 
-  addtxns(txnargs, currint['methods'])
-
-  #refargs = json.loads('{refargs}') 
-  #addtxns(refargs, currint['methods'])
-  
+    
   with open("abiadv.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 

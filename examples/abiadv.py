@@ -104,6 +104,9 @@ def show_inventory_():
   print("You are carrying:")
   print(fgYellow)
 
+  if lgeti('junk_count') > 0:
+    print(numtostr(lgeti('junk_count')) + ' Garage Sale Junk')
+  
   inv.init()
   i = 0 
   while i < inv.size:
@@ -128,9 +131,6 @@ def show_at_location_():
     while i < items.size:
       print(abi.String(items[i]).value)
       i = i + 1
-
-    if lgets('location') == 'D':
-      show_junk()
     
   print(resetColor)
 
@@ -173,15 +173,35 @@ def encounter():
   print(Concat(clr('You lose [10] hit points', bgRed), fgWhite, resetColor)) 
   return 1
 
-def buy_(what):
-  
-  # find pay txn amount
-  
-  #Begin()
-  #SetField()
-  #Submit()
-  print("You bought it.")
+def buy_(asset, what):
   return 1
+  
+  #if find_payment(20000):
+  #  Begin()
+  #  SetFields({
+  #    TxnField.type_enum: TxnType.AssetTransfer,
+  #    TxnField.sender: Global.current_application_address,
+  #    TxnField.asset_amount: 1,
+  #    TxnField.asset_receiver: Txn.sender,
+  #    TxnField.xfer_asset: Txn.assets[asset]
+  #  })
+  #  Submit()
+  #  print("You bought it.")
+  #  lput('junk_count', asset_bal(Txn.sender, 0))
+  #  return 1
+  #return 0
+
+def find_payment(amount):
+  i = 0
+  found = 0
+  while i < Global.group_size:
+    if (Gtxn[i].sender == Txn.sender and 
+        Gtxn[i].receiver == Global.current_application_address and 
+        Gtxn[i].amount == amount):
+      found = True
+    i = i + 1
+      
+  return found
 
 def find_axfer(assetid):
   i = 0
@@ -277,6 +297,7 @@ def init_global_array(name):
 
 def setup_():
   lput('location', 'Y')
+  lput('junk_count', 0)
   init_local_array('inventory')
   init_global_array('Y_items')
   init_global_array('L_items')
@@ -309,8 +330,8 @@ def examine(what: String) -> abi.Uint32:
 def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)
 
-def buy(optin, pay, item: String) -> abi.Uint32:
-  return buy_(abi.String(item).value)    
+def buy(asset, item: String, optin, pay ) -> abi.Uint32:
+  return buy_(asset, abi.String(item).value)    
 
 def offer(asset, item: String) -> abi.Uint32:
   return offer_(Int(0), abi.String(item).value)    

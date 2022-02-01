@@ -264,12 +264,15 @@ def txnargs(df):
         txnargs_[df.name] = []
       vall = arg.name.value
       if arg.name.value == 'optin': vall = 'axfer'
-      
       txnargs_[df.name].append((df.name, vall, i ))
       toremove.append(arg)      
     i += 1
-  for argn in toremove:
-    df.arguments.remove(argn)
+  if len(toremove)>0:
+    #rem = map(lambda a: f"'{a.name.value}'", toremove)
+    #saveargs = ','.join(rem)
+    #df.decorators.insert(0, f"@txargs({saveargs})")
+    for argn in toremove:
+      df.arguments.remove(argn)
 
 def refargs(df):
   i = 0
@@ -279,10 +282,10 @@ def refargs(df):
       if not (df.name in refargs_):
         refargs_[df.name] = []      
       refargs_[df.name].append((df.name, arg.name.value, i ))
-      toremove.append(arg)
+      #toremove.append(arg)
     i += 1
-  for argn in toremove:
-    df.arguments.remove(argn)
+  #for argn in toremove:
+  #  df.arguments.remove(argn)
 
 def prints(p):
   p.replace(f"Log{p.value.dumps()}")
@@ -412,7 +415,15 @@ progroot = 0
 
 def abimethod(d):
   if hasattr(d, 'return_annotation') and d.return_annotation is not None:
-    del d.decorators[0]
+    todel = -1
+    n = 0
+    for dd in d.decorators:
+      if 'Subroutine' in dd.dumps():
+        todel = n
+      n = n + 1
+        
+    if todel >= 0:
+      del d.decorators[todel]
     d.decorators.insert(0,'@staticmethod')
     d.decorators.insert(1,'@ABIMethod')
 
@@ -472,6 +483,8 @@ from typing import Tuple
 from pyteal import *
 
 from pytealutils.applications import ABIMethod, DefaultApprove
+from pytealutils.applications.application import sargs
+
 from pytealutils import abi
 
 globals().update(TealType.__members__)
@@ -479,33 +492,26 @@ globals().update(TealType.__members__)
 """)
 
   print(dumpglobals(red))
-
   
   print(simpleReplaces(dropReturns(dump_nonabi_defs(red))))
+
+  print('sargs = ' + json.dumps(txnargs_) + '\n')
   
   print("class ABIApp(DefaultApprove):")
   red.increase_indentation(2)
+
+  dfs = dropReturns(dump_abi_defs(red))
   
-  print(dropReturns(dump_abi_defs(red)))
+  print(dfs)
 
   print(dump_app_ops(red))
 
   fname = Path(sys.argv[1]).stem
   
   code = """
-if __name__ == "__main__":
 
-  def find_method(methods, name):
-    for m in methods:
-      if m['name'] == name:
-        return m['args']
   
-  def addtxns(l, d):
-    for x in l:
-      xargs = l[x]
-      for a in xargs:
-        (mth, typ, ind) = a
-        find_method(d, mth).insert(ind, {"type": typ}) 
+if __name__ == "__main__":
 
   app = ABIApp()
 
@@ -517,20 +523,14 @@ if __name__ == "__main__":
     pass
     
   currint['methods'] = app.get_interface().dictify()['methods']
-
-  txnargs = json.loads('{txnargs}') 
-  addtxns(txnargs, currint['methods'])
-
-  #refargs = json.loads('{refargs}') 
-  #addtxns(refargs, currint['methods'])
-  
+    
   with open("{fname}.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 
   print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
   """
   code = code.replace('{fname}', fname)
-  code = code.replace('{txnargs}',json.dumps(txnargs_))
+  #code = code.replace('{txnargs}',json.dumps(txnargs_))
   #code = code.replace('{refargs}',json.dumps(refargs_))
   print(code)
 
@@ -547,6 +547,7 @@ def simpleReplaces(source):
   source = source.replace('gput(', 'App.globalPut(')
   source = source.replace('holding(', 'AssetHolding.balance(')
   source = source.replace('app_address','Global.current_application_address()')
+  source = source.replace('optin', 'axfer')
   return source
 
 def convert(fname):

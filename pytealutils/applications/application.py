@@ -27,6 +27,7 @@ from pyteal import *
 
 from .. import abi as tealabi
 
+sargs = None
 
 # Utility function to take the string version of a
 # method signature and return the 4 byte selector
@@ -44,40 +45,50 @@ def ABIReturn(b: TealType.bytes) -> Expr:
 def ABIMethod(func):
     sig = signature(func)
 
+    global txnargs_
+    print(' . . . . . . . .  .  . ..')
+    print(sargs)
+
+    txnargs = ['axfer', 'pay', 'keyreg', 'txn', 'acfg', 'afrz', 'appl']
+    
     args1 = []
     for v in sig.parameters.values():
+      if v.name in txnargs:
+        continue
       if v.annotation != _empty:
         args1.append(( v.annotation.__str__(), v.name ))
       else:
         args1.append(( v.name, '' ))
 
     #args = [tealabi.abiTypeName(v.annotation) for v in sig.parameters.values()]
-
+    
     args = []
     for v in sig.parameters.values():
-      if v.name in ['asset', 'account', 'application']:
+      if v.name in ['asset', 'account', 'application'] or v.name in txnargs:
         args.append(v.name)
       else:
         args.append(tealabi.abiTypeName(v.annotation))
     
     returns = sig.return_annotation
-
+    
     method = "{}({}){}".format(
         func.__name__, ",".join(args), tealabi.abiTypeName(returns)
     )
-
+    
+    print('-----------------------')
+    print('method = ', method)
     setattr(func, "abi_selector", hashy(method))
     setattr(func, "abi_args", [abi.Argument(type, name) for (type, name) in args1])
     setattr(func, "abi_returns", abi.Returns(tealabi.abiTypeName(returns)))
 
     # Get the types specified in the method
     #abi_codec = [v.annotation for v in sig.parameters.values()]
-
+    print('abi_args =', func.abi_args)
     abi_codec = []
     for v in sig.parameters.values():
       if v.name in ['asset', 'account', 'application']:
         abi_codec.append(Uint8)
-      else:
+      elif not (v.name in txnargs):
         abi_codec.append(v.annotation)
     
     @wraps(func)
