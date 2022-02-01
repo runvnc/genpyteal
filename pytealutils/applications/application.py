@@ -52,6 +52,10 @@ def ABIMethod(func):
     sig = signature(func)
     
     args1 = []
+    if sargs != None and func.__name__ in sargs:
+      for a in sargs[func.__name__]:
+        args1.append((a, ''))
+    
     for v in sig.parameters.values():
       if v.annotation != _empty:
         args1.append(( v.annotation.__str__(), v.name ))

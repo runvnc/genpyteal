@@ -1,49 +1,6 @@
 {
     "methods": [
         {
-            "name": "examine",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "what"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "take",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "what"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "use",
-            "args": [
-                {
-                    "type": "string",
-                    "name": "item"
-                }
-            ],
-            "returns": {
-                "type": "uint32"
-            }
-        },
-        {
-            "name": "inventory",
-            "args": [],
-            "returns": {
-                "type": "string[]"
-            }
-        },
-        {
             "name": "offer",
             "args": [
                 {
@@ -59,8 +16,46 @@
             }
         },
         {
-            "name": "setup",
-            "args": [],
+            "name": "buy",
+            "args": [
+                {
+                    "type": "axfer"
+                },
+                {
+                    "type": "pay"
+                },
+                {
+                    "type": "asset"
+                },
+                {
+                    "type": "string",
+                    "name": "item"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "drop",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "examine",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "what"
+                }
+            ],
             "returns": {
                 "type": "uint32"
             }
@@ -73,14 +68,11 @@
             }
         },
         {
-            "name": "buy",
+            "name": "take",
             "args": [
                 {
-                    "type": "asset"
-                },
-                {
                     "type": "string",
-                    "name": "item"
+                    "name": "what"
                 }
             ],
             "returns": {
@@ -100,13 +92,27 @@
             }
         },
         {
-            "name": "drop",
+            "name": "inventory",
+            "args": [],
+            "returns": {
+                "type": "string[]"
+            }
+        },
+        {
+            "name": "use",
             "args": [
                 {
                     "type": "string",
-                    "name": "what"
+                    "name": "item"
                 }
             ],
+            "returns": {
+                "type": "uint32"
+            }
+        },
+        {
+            "name": "setup",
+            "args": [],
             "returns": {
                 "type": "uint32"
             }
