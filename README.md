@@ -74,6 +74,8 @@ The best explanation is just to show the examples.
 ```python
 from lib.util import *
 
+JUNK_ASSET = 575753250
+
 fgGreen = "\033[38;5;2m"
 fgYellow = "\033[38;5;11m"
 fgPurple = "\033[38;5;35m"
@@ -176,6 +178,9 @@ def show_inventory_():
   print("You are carrying:")
   print(fgYellow)
 
+  if lgeti('junk_count') > 0:
+    print(numtostr(lgeti('junk_count')) + ' Garage Sale Junk')
+  
   inv.init()
   i = 0 
   while i < inv.size:
@@ -183,6 +188,9 @@ def show_inventory_():
     i = i + 1
   print(resetColor)
   return 1
+
+def show_junk():    
+  print(numtostr( asset_bal(app_address, 0)) + " Garage Sale Junk")
 
 def show_at_location_():
   items = StringArray(ggets(lgets('location') + '_items'))
@@ -239,14 +247,60 @@ def encounter():
   print(Concat(clr('You lose [10] hit points', bgRed), fgWhite, resetColor)) 
   return 1
 
-def buy_(what):
-  print("You bought it.")
-  # find pay txn amount
+def buy_(asset, what):  
+  if find_payment(20000):
+    Begin()
+    SetFields({
+      TxnField.type_enum: TxnType.AssetTransfer,
+      TxnField.sender: app_address,
+      TxnField.asset_amount: 1,
+      TxnField.asset_receiver: Txn.sender,
+      TxnField.xfer_asset: Txn.assets[Btoi(asset)]
+    })
+    Submit()
+    print("You bought it.")
+    lput('junk_count', asset_bal(Txn.sender, 0))
+    return 1
+  return 0
+
+def find_payment(amount):
+  i = 0
+  found = 0
+  while i < Global.group_size:
+    if (Gtxn[i].sender == Txn.sender and 
+        Gtxn[i].receiver == Global.current_application_address and 
+        Gtxn[i].amount == amount):
+      found = True
+    i = i + 1
+      
+  return found
+
+def find_axfer(assetid):
+  i = 0
+  found = 0
+  while i < Global.group_size:
+    if (Gtxn[i].asset_id == assetid and 
+        Gtxn[i].asset_receiver == Global.current_application_address and 
+        Gtxn[i].asset_amount == 1):
+      found = True
+    i = i + 1
+      
+  return found
   
-  #Begin()
-  #SetField()
-  #Submit()
-  return 1
+def offer_(asset, what):
+  if what == "junk":
+    Begin()
+    SetFields({
+      TxnField.type_enum: TxnType.AssetTransfer,
+      TxnField.sender: Global.current_application_address,
+      TxnField.asset_amount: 0,
+      TxnField.asset_receiver: Global.current_application_address,
+      TxnField.xfer_asset: Txn.assets[asset]
+    })
+    Submit()   
+    print("The merchant will take your junk.")
+    return 1
+  return 0
 
 def use_(item:bytes):
   if arr_find(lgets('inventory'), item) == NOT_FOUND:
@@ -303,23 +357,27 @@ def init_local_array(name):
   
   lput(name, strarr.serialize())
 
-def init_global_array(name):
+def init_global_array(name, df):
   strarr = StringArray("")
   strarr.init()
-  if name == 'S_items':
-    strarr.append(abi.String.encode('d20'))
-  if name == 'D_items':
-    strarr.append(abi.String.encode('sign'))
+  if df != '':
+    strarr.append(abi.String.encode(df))
+  #if name == 'S_items':
+  #  strarr.append(abi.String.encode('d20'))
+  #if name == 'D_items':
+  #  strarr.append(abi.String.encode('sign'))
 
   gput(name, strarr.serialize())
 
+
 def setup_():
   lput('location', 'Y')
+  lput('junk_count', 0)
   init_local_array('inventory')
-  init_global_array('Y_items')
-  init_global_array('L_items')
-  init_global_array('S_items')
-  init_global_array('D_items')
+  init_global_array('Y_items', '')
+  init_global_array('L_items', '')
+  init_global_array('S_items', 'd20')  
+  init_global_array('D_items', 'sign')
   
   return 1
 
@@ -347,8 +405,11 @@ def examine(what: String) -> abi.Uint32:
 def use(item: String) -> abi.Uint32:
   return use_(abi.String(item).value)
 
-def buy(optin, pay, item: String) -> abi.Uint32:
-  return buy_(abi.String(item.value))    
+def buy(optin, pay, asset, item: String ) -> abi.Uint32:
+  return buy_(asset, abi.String(item).value)    
+
+def offer(asset, item: String) -> abi.Uint32:
+  return offer_(asset, abi.String(item).value)    
 ```
 ## examples/bool.py 
 
@@ -579,6 +640,10 @@ from .libex import *
 StringArray = abi.DynamicArray[abi.String]
 
 NOT_FOUND = Int(999)
+
+asset = abi.Uint8
+account = abi.Uint8
+application = abi.Uint8
 
 @bytes
 def clr(s, ansi):
