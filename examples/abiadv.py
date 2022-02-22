@@ -51,7 +51,7 @@ Only 0.02 ALGO per item\033[0m
 
 To buy an item (if using the 'avmloop' client), enter the following command:
 \033[38;2;138;226;52m\033[48;2;0;21;0m
-> /optin 23423423,/pay 0.02,buy junk\033[0m
+> /optin 575753250,/pay 0.02,buy 575753250 junk\033[0m
 """
 
 @bytes
@@ -271,7 +271,7 @@ def drop_(what:TealType.bytes):
     lput('inventory', arr_del(lgets('inventory'), ind))
     items.init()
     items.append(abi.String.encode(what))
-    print('You dropped the ' + what)
+    #print('You dropped the ' + what)
     gput(lgets('location')+'_items', items.serialize())    
   return 1
   
@@ -288,10 +288,6 @@ def init_global_array(name, df):
   strarr.init()
   if df != '':
     strarr.append(abi.String.encode(df))
-  #if name == 'S_items':
-  #  strarr.append(abi.String.encode('d20'))
-  #if name == 'D_items':
-  #  strarr.append(abi.String.encode('sign'))
 
   gput(name, strarr.serialize())
 
