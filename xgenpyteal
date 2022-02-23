@@ -29,7 +29,7 @@ def catchdump(x):
     pass  
 
 def hasMultiStmt(node):
-  l =[]
+  l = []
   try:
     for nd in node:
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
