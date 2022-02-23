@@ -68,6 +68,7 @@ def move_(location, direction):
   i = 0
   l = 0
   d = 0
+  
   print("Trying to move " + direction)
   while i < Len(connects):
     if Extract(connects, i, 1) == direction:

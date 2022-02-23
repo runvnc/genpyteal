@@ -6,3 +6,4 @@ src/*
 test*.py
 interface.json
 *.teal
+.genpyteal_cache

@@ -5,7 +5,7 @@ def proc(n):
 
 def acceptable(n, target):
   if n >= target:
-    print("Acceptable. Diff is " + numtostr(n - target))
+    print(" Acceptable. Diff is " + numtostr(n - target))
     return True
   else:
     return False
