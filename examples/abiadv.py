@@ -114,6 +114,7 @@ def show_inventory_():
     print(abi.String(inv[i]).value)
     i = i + 1
   print(resetColor)
+  
   return 1
 
 def show_junk():    

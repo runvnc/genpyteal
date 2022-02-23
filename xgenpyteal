@@ -454,8 +454,11 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  sys.stderr.write(f"{s} ")  
-  #sys.stderr.write(f".")  
+  sys.stderr.write(f".")  
+  sys.stderr.flush()
+
+def stat_(s):
+  sys.stderr.write(f"{s} ")
   sys.stderr.flush()
 
 
@@ -602,8 +605,9 @@ def procdefs(rd, parent, i):
     red = RedBaron(rr)
     findmap(red, 'decorator', decs)
     stat('cache load')
+    stat_('\n--- '+rd.name+' ---\n')
     return
-  stat('\n--- '+rd.name+' ---')
+  stat_('\n--- '+rd.name+' ---\n')
   red = RedBaron(source)[0]
   findmap(red, 'def', txnargs)
  
