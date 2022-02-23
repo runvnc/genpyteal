@@ -416,7 +416,7 @@ def strings(i):
 
 progroot = 0
 
-def abimethod(d):
+def abimethod(d, fullsource):
   stat('abimethod')
   if hasattr(d, 'return_annotation') and d.return_annotation is not None:
     
@@ -430,7 +430,7 @@ def abimethod(d):
         todel = dd_str
       n = n + 1
         
-    #if todel != '':
+    if todel != '':
       
     #  del d.decorators[todel]
     #stat('insert')
@@ -578,9 +578,9 @@ def cached(key):
   else:
     return False
 
-def add_cache(cache_key, source):
+def add_cache(cache_key, red):
   with open(".genpyteal_cache/"+cache_key, 'w') as f:
-    f.write(source)
+    f.write(red.value.dumps())
     #print("wrote function ",red.name," to cache file: ", cache_key)
 
 def getsig(full, val):
@@ -593,19 +593,22 @@ def getsig(full, val):
     l += 1
   return sig
 
-def procdefs(rd, parent, i):
-  source = rd.dumps()  
-  key = str(hash(source))
+def procdefs(rd):
+  full = rd.dumps()
+  valsource = rd.value.dumps()
+  
+  key = str(hash(valsource))
   rr = cached(key)
   if rr:
     #rd.value = rr
-    red = RedBaron(rr)
+    red = RedBaron(getsig(full,valsource) + '\n' + rr)
     findmap(red, 'decorator', decs)
     stat('cache load')
     return
   stat('\n--- '+rd.name+' ---')
-  red = RedBaron(source)[0]
+  red = RedBaron(getsig(full,valsource) + '\n' + valsource)[0]
   findmap(red, 'def', txnargs)
+  #findmap(red, 'def', refargs)
  
   add_root_scratches(red)
 
@@ -627,13 +630,17 @@ def procdefs(rd, parent, i):
   findmap(red, 'def', fixreturns)
   stat('def..')
   findmap(red, 'def', addreturns)
+  stat('decorator..')
   
   stat('strings..')
   findmap(red, 'string', strings)
   sys.stderr.write(f"\n")
-  outsource = red.dumps()
-  parent[i] = outsource
-  add_cache(key, outsource)
+  try:
+    rd.value = red.value.dumps()
+  except:
+    print(rd)
+    os.exit(1)
+  add_cache(key, rd)
 
 def convert(fname):
   sys.stderr.write("genpyteal version 3.0.0\n")
@@ -657,13 +664,10 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  for i, d in enumerate(red):
-    try:
-      if d.type == 'def':
-        procdefs(d, red, i)
-    except:
-      
-      pass
+  #alldefs = red.find_all('def')
+  #for d of alldefs:
+    
+  findmap(red, 'def', procdefs)
 
   if isabi:
     findmap(red, 'def', abimethod)
