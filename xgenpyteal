@@ -488,6 +488,9 @@ def dropReturns(currsource):
   
   return newsource
 
+def indent_staticmethods(src):
+  return src.replace('@staticmethod','  @staticmethod')
+
 def abiapp(red):
   print("""
 import json
@@ -514,6 +517,7 @@ globals().update(TealType.__members__)
   red.increase_indentation(2)
 
   dfs = dropReturns(dump_abi_defs(red))
+  dfs = indent_staticmethods(dfs)
   
   print(dfs)
 
@@ -694,7 +698,7 @@ def convert(fname):
       sys.stderr.write(traceback.format_exc())              
       pass
 
-  sys.stderr.write('\033[0m')
+  sys.stderr.write('\033[0m\n')
   sys.stderr.flush()
   if isabi:
     #findmap(red, 'def', abimethod)
