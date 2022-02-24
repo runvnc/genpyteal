@@ -1,11 +1,23 @@
-#!python
+#!/usr/bin/python
 import json
 from redbaron import RedBaron
 import traceback
 import sys
 from collections.abc import Iterable
+import os
+import re
+from pathlib import Path
+from os.path import exists
 
-scratches_added = {}
+os.environ["PYTHONHASHSEED"] = "0"
+
+ABI = False
+
+scratches_added = {"root":{}}
+txnargs_ = {}
+refargs_ = {}
+
+cache = {}
 
 def iterable(obj):
     return isinstance(obj, Iterable)
@@ -17,7 +29,7 @@ def catchdump(x):
     pass  
 
 def hasMultiStmt(node):
-  l =[]
+  l = []
   try:
     for nd in node:
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
@@ -33,8 +45,18 @@ def getScratch(red):
   s = red.find_all('assign')
   if isinstance(s, list):
     s = s.filter(lambda x: 'ScratchVar' in x)
-  if s:
-    return '\n'.join(s.map(lambda x: x.dumps()))
+  
+  s2 = red.find_all('name')
+  #if isinstance(s2, list):
+  s2 = s2.filter(lambda x: x.dumps() == 'maybe' or 'asset_bal' in x.dumps())
+  #else:
+  #  sys.stderr.write('not filtering s2')
+  if s or s2:
+    s3 = []
+    if s: s3 = s
+    if s2: 
+      s3 = s3 + s2
+    return '\n'.join(s3.map(lambda x: x.dumps()))
   else:
     return ''
 
@@ -51,19 +73,25 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
-    return False
+    parentdef = { 'name': 'root'}
+    
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
     return True
   else:
-    return False
-    
-#  s = parentdef.find_all('assign')
-#  match = f"{varname} = ScratchVar"
-#  if match in s.dumps():
-#    return True
-#  else:
-#    return False
+    if varname in scratches_added['root']:
+      return True
+    else:
+      if varname == 'maybe':
+        return '\nmaybe\n' not in parentdef.dumps()
+      else:
+        return False
 
+def add_root_scratches(red):
+  gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+  for nd in gs:
+    if 'ScratchVar' in nd.dumps():
+      scratches_added['root'][str(nd.name)] = True
+    
 def findmap(red, which, how, def_=None):
   l = red.find_all(which)
   if True or def_ is None:
@@ -78,6 +106,7 @@ def decs(d):
 
 def all(red, x = ''):
   try:
+  
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
       if red.type == 'def' and red.name != 'app' and red.name != 'sig':
@@ -94,6 +123,8 @@ def all(red, x = ''):
       findmap(red, 'boolean_operator', bools)
       stat('binary_operator..')
       findmap(red, 'binary_operator', concats)
+      sys.stderr.flush()  
+
       if hasMulti or red.type == 'while':
         stat('return..')
         findmap(red, 'return..', returns)
@@ -108,6 +139,8 @@ def all(red, x = ''):
     strs_ = []
     #hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
+    sys.stderr.flush()  
+
     if hasattr(red,'type') and red.type == 'name':
       return
     try:    
@@ -136,16 +169,22 @@ def all(red, x = ''):
       retstr = ''
       if red.type == 'def':
         retstr = f"{scratch}\nreturn "
-      red.value = f"{retstr} Seq([\n\t{strlist} ])\n"    
+      red.value = f"{retstr} Seq(\n\t{strlist} )\n"    
       red.value = removeblanks(red.value.dumps())
+
+      #####
     elif len(strs_) == 1:
       #if True or red.find('ifelseblock') or red.find('while') or red.find('assert'):
-      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):      
-        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return')
+
+      ########################3
+      
+      if not ('return' in red.value.dumps()) and ( red.find('ifelseblock') or red.find('while') or red.type == 'assert' or red.find('assign')  ):              
+        red.value =f"{scratch}\nreturn {strs_[0]}\n".replace('return return', 'return').replace('return Return','return').replace('maybe\n  maybe','maybe\n')
   except BaseException as err:
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
     pass  
+
 
 def bools(boolOp):
   all(boolOp.first)
@@ -172,14 +211,15 @@ def concats(ct):
   if ct.first.type == 'string' or ct.second.type == 'string':
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
-    if ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes':
+    if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 
+       ct.first.value[0].value == 'Concat' or ct.second.value[0].value == 'Concat'):
       ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")  
   except:
     pass
 
 def assigns(asn, parentdef_ = None):  
-  dumps = asn.value.dumps()
-  if 'ScratchVar' in dumps:
+  dumps = asn.value.dumps()  
+  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps or 'maybe' in asn.target.dumps():
     return
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -187,10 +227,7 @@ def assigns(asn, parentdef_ = None):
     parentdef = parentdef_
   if parentdef is None:
     return
-  #if hasattr(asn, 'asnChecked'):
-  #  return
   parval = asn.value
-  #asn.asnChecked = True
   if hasattr(parval, 'filtered'):
     parval = parval.filtered()[0]
   if hasattr(parval, 'type'):  
@@ -208,10 +245,14 @@ def assigns(asn, parentdef_ = None):
     else:
       typ = 'TealType.uint64'
     makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
-    asn.insert_before(makescratch)
+    #asn.insert_before(makescratch)
+    parentdef.insert(0,makescratch)
+    
     if not parentdef.name in scratches_added:
-      scratches_added[parentdef.name] = {}
+      scratches_added[parentdef.name] = {}    
+      
     scratches_added[parentdef.name][asn.target.value] = True
+    
   asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
 
 def calls(nd):
@@ -224,6 +265,35 @@ def calls(nd):
   
   except:
     pass
+
+def txnargs(df):
+  i = 0
+  toremove = []
+  for arg in df.arguments:    
+    if arg.name.value in ['pay', 'axfer', 'optin', 'acfg', 'txn', 'keyreg', 'afrz', 'appl']:
+      if not (df.name in txnargs_):
+        txnargs_[df.name] = []
+      vall = arg.name.value
+      if arg.name.value == 'optin': vall = 'axfer'
+      txnargs_[df.name].append(vall)
+      toremove.append(arg)      
+    i += 1
+  if len(toremove)>0:    
+    for argn in toremove:
+      df.arguments.remove(argn)
+
+def refargs(df):
+  i = 0
+  toremove = []
+  for arg in df.arguments:    
+    if arg.name.value in ['account', 'asset', 'application']:
+      if not (df.name in refargs_):
+        refargs_[df.name] = []      
+      refargs_[df.name].append((df.name, arg.name.value, i ))
+      #toremove.append(arg)
+    i += 1
+  #for argn in toremove:
+  #  df.arguments.remove(argn)
 
 def prints(p):
   p.replace(f"Log{p.value.dumps()}")
@@ -240,8 +310,11 @@ def names(nd):
   if t:
     t.replace('Int(1)')
     return
+  m = nd.find('name', lambda n: n.value=='maybe')
+  if m:
+    return
     
-  if nd.dumps()+'.load()' in nd.parent.dumps():
+  if nd.dumps()+'.load()' in nd.parent.dumps() or 'maybe' in nd.parent.dumps():
     return
   if nd.dumps()+'.store(' in nd.parent.dumps():
     return
@@ -249,7 +322,7 @@ def names(nd):
   varname = nd.dumps()
 
   try:
-    if hasScratch(nd, varname):
+    if hasScratch(nd, varname) or varname == 'size':
       nd.replace(f"{nd.dumps()}.load()")
     else:
       try:
@@ -259,7 +332,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'application_args']:
+                               'group_size', 'application_args', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -289,7 +362,7 @@ def ifs(if_):
     findmap(if_.value,'return',returns)
     else_ = ', ' + if_.value[1].value.dumps()
   try:  
-    if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n"
+    if_.value = f"If( {if_.value[0].test.dumps()}, {if_.value[0].value.dumps()}{else_} )\n\n \n"
   except:
     pass
 
@@ -313,17 +386,22 @@ def addreturns(d):
 
 def ints(i):
   try:
-    if i.parent.type == 'def_argument':
+    if i.parent.type == 'def_argument' or i.parent.type == 'getitem':
       return
-    parname = i.parent.parent.parent.value[0].value
-    if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
-      return
-    try:
-      if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+    if hasattr(i.parent.parent.parent, 'value') and hasattr(i.parent.parent.parent.value, 'pop'):
+      parname = i.parent.parent.parent.value[0].value
+      if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
         return
+    try:      
+      if hasattr(i.parent.parent, 'value') and hasattr(i.parent.parent.value, 'pop'):
+        if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
+          return
     except:
       pass
-  except:
+  except BaseException as err:
+    sys.stderr.write(' int outer exception ' + i.dumps())
+    sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+    sys.stderr.write(traceback.format_exc())      
     pass
     return
     
@@ -342,6 +420,32 @@ def strings(i):
 
 progroot = 0
 
+def abimethod(d):
+  if hasattr(d, 'return_annotation') and d.return_annotation is not None:    
+    todel = -1
+    n = 0
+    for dd in d.decorators:
+      stat('dumps')
+      dd_str = dd.dumps()
+      if 'Subroutine' in dd_str:
+        stat('ret dumps')
+        todel = n
+      n = n + 1
+        
+    if todel != -1:
+      del d.decorators[todel]
+    stat('insert')
+    d.decorators.insert(0,'@staticmethod')
+    stat('insert 2')
+    d.decorators.insert(1,'@ABIMethod')
+    
+
+def app_ops(d):
+  if d.name in ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']:
+    del d.decorators[0]
+    d.decorators.insert(0,'@staticmethod')
+    d.decorators.insert(1, '@Subroutine(TealType.uint64)')
+
 def isSigDef(nd):
   try:
     if nd.type == 'def' and nd.name=='sig':
@@ -351,17 +455,234 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  #sys.stderr.write(f"{s} ")  
-  sys.stderr.write(f".")  
-  sys.stderr.flush()
+  sys.stderr.write('▂')
+  #sys.stderr.flush()
+
+def stat_(s):
+  sys.stderr.write("\033[0;32m")
+  sys.stderr.write(f"{s}")
+  #sys.stderr.flush()
+
+
+opslist = ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']
+
+def dumpglobals(red):
+  gs = red.find_all('g:*', lambda v: v.root is v.parent and v.type != 'def')
+  return "\n".join(gs.map(lambda n: n.dumps()))
+
+def dump_nonabi_defs(red):
+  gs = red.find_all('def', lambda v: v.return_annotation is None and not (v.name in opslist))
+  return "\n".join(gs.map(lambda n: n.dumps()))
+  
+def dump_abi_defs(red):
+  gs = red.find_all('def', lambda v: not (v.return_annotation is None))
+  return "\n".join(gs.map(lambda n: n.dumps()))
+
+def dump_app_ops(d):
+  gs = d.find_all('def', lambda v: v.name in opslist)
+  return "\n".join(gs.map(lambda n: n.dumps()))
+
+def dropReturns(currsource):  
+  return currsource
+  newsource = currsource
+  while 'Return(' in newsource:
+    newsource = re.sub(r'Return(\([\s\S]*\))', r'\1 ', newsource) 
+  while 'Return (' in newsource:
+    newsource = re.sub(r'Return (\([\s\S]*\))', r'\1 ', newsource)
+  
+  return newsource
+
+def indent_staticmethods(src):
+  return src.replace('@staticmethod','  @staticmethod')
+
+def abiapp(red):
+  print("""
+import json
+from typing import Tuple
+
+from pyteal import *
+
+from pytealutils.applications import ABIMethod, DefaultApprove
+from pytealutils.applications.application import set_tx_args
+
+from pytealutils import abi
+
+globals().update(TealType.__members__)
+
+""")
+
+  print(dumpglobals(red))
+  
+  print(simpleReplaces(dropReturns(dump_nonabi_defs(red))))
+
+  print('set_tx_args(' + json.dumps(txnargs_) + ')\n')
+  
+  print("class ABIApp(DefaultApprove):")
+  red.increase_indentation(2)
+
+  dfs = dropReturns(dump_abi_defs(red))
+  dfs = indent_staticmethods(dfs)
+  
+  print(dfs)
+
+  print(dump_app_ops(red))
+
+  fname = Path(sys.argv[1]).stem
+  
+  code = """
+
+  
+if __name__ == "__main__":
+
+  app = ABIApp()
+
+  currint = {}
+  try:
+    currjson = open('{fname}.json').read()
+    currint = json.loads(currjson)    
+  except:
+    pass
+    
+  currint['methods'] = app.get_interface().dictify()['methods']
+    
+  with open("{fname}.json", "w") as f:
+    f.write(json.dumps(currint, indent=4))
+
+  print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
+  """
+  code = code.replace('{fname}', fname)
+  
+  print(code)
+
+def usesabi(red):
+  defs_ = red.find_all('def')
+  for nd in defs_:
+    if hasattr(nd, 'return_annotation') and nd.return_annotation is not None:
+      return True
+  return False
+
+def simpleReplaces(source):
+  source = source.replace('len(', 'Len(')
+  source = source.replace('lput(', 'App.localPut(0,')
+  source = source.replace('gput(', 'App.globalPut(')
+  source = source.replace('holding(', 'AssetHolding.balance(')
+  source = source.replace('app_address','Global.current_application_address()')
+  source = source.replace('optin', 'axfer')
+  return source
+
+
+def check_cache_dir():
+  if exists(".genpyteal_cache"):
+    return
+  else:
+    os.makedirs(".genpyteal_cache")     
+
+check_cache_dir()
+
+def cached(key):  
+  if exists(".genpyteal_cache/"+key):
+    with open(".genpyteal_cache/"+key) as f:
+      contents = f.read()
+      return contents
+  else:
+    return False
+
+def add_cache(cache_key, source):
+  with open(".genpyteal_cache/"+cache_key, 'w') as f:
+    f.write(source)
+    #print("wrote function ",red.name," to cache file: ", cache_key)
+
+
+#RedBaron(NodeList.from_fst(json.load(f)))
+#json.dump(root.fst(), output)
+
+
+def procdefs(source):
+  key = str(hash(source))
+  rr = cached(key)
+  if rr:
+    stat_('▃')
+    sys.stderr.flush()
+    return rr  
+  red = RedBaron(source)
+  findmap(red, 'def', txnargs)
+ 
+  add_root_scratches(red)
+
+  findmap(red, 'binary_operator', concats)
+
+  stat('prints..')
+  findmap(red, 'print', prints)
+  sys.stderr.flush()  
+
+  findmap(red, 'name', names)
+  stat('unitary_operator..')
+  findmap(red, 'unitary_operator', unitaries)
+  stat('return..')
+  findmap(red, 'return', returns)  
+  stat('def..')
+  findmap(red, 'def', all)
+  sys.stderr.flush()  
+  stat('assign..')
+  findmap(red, 'assign', assigns)
+  stat('def..')
+
+  findmap(red, 'def', fixreturns)
+  stat('def..')
+  findmap(red, 'def', addreturns)
+  sys.stderr.flush()  
+
+  findmap(red, 'decorator', decs)
+  
+  stat('strings..')
+  findmap(red, 'string', strings)
+
+  global isabi
+  if isabi:
+    findmap(red, 'def', abimethod)
+    findmap(red, 'def', app_ops)
+    sys.stderr.flush()
+
+  sys.stderr.write(f"\n")
+  outsource = red.dumps()
+  add_cache(key, outsource)
+  return outsource
+
+isabi = False
+
+def sections(source):
+  groups = []
+  lines = source.split('\n')
+  curr = ''
+  last_dec = False
+  for line in lines:
+    is_dec = line.startswith('@')
+    is_def = line.startswith('def ')
+    if ((not last_dec) and is_def) or is_dec:
+      if len(curr)>0:
+        groups.append(curr)
+        curr = ''
+    curr += line+'\n'
+    last_dec = is_dec
+  if len(curr)>0:
+    groups.append(curr)
+  return groups
 
 def convert(fname):
-  sys.stderr.write("genpyteal version 2.2.0\n")
+  sys.stderr.write("genpyteal version 3.0.0\n")
+  stat_('')
+
   mode = 'Application'
   entry = 'app'
   source = open(fname, "r")
-  red = RedBaron(source.read())
+  source = source.read()
+  source = simpleReplaces(source)
+  red = RedBaron(source)
   stat('Parsed file..')
+
+  global isabi
+  isabi = usesabi(red)
+    
   sig = red.filter(isSigDef)
   if sig: 
     mode = 'Signature'
@@ -371,27 +692,36 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  stat('prints..')
-  findmap(red, 'print', prints)
-  stat('unitary_operator..')
-  findmap(red, 'unitary_operator', unitaries)
-  stat('return..')
-  findmap(red, 'return', returns)  
-  stat('def..')
-  findmap(red, 'def', all)  
-  stat('assign..')
-  findmap(red, 'assign', assigns)
-  stat('def..')
-  findmap(red, 'def', fixreturns)
-  stat('def..')
-  findmap(red, 'def', addreturns)
-  stat('decorator..')
-  findmap(red, 'decorator', decs)
-  sys.stderr.write(f"\n")    
+  source = red.dumps()
+  chunks = sections(source)
+
+  output = ''
+  
+  for src in chunks:
+    try:
+      newsrc = procdefs(src)
+      output += newsrc
+    except BaseException as err:
+      sys.stderr.write('procdef error')
+      sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+      sys.stderr.write(traceback.format_exc())              
+      pass
+
+  sys.stderr.write('\033[0m\n')
+  sys.stderr.flush()
+  if isabi:
+    #findmap(red, 'def', abimethod)
+    #findmap(red, 'def', app_ops)
+    red = RedBaron(output)
+    abiapp(red)
+    return
+
+    
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(red.dumps())
+  print(simpleReplaces(dropReturns(output)))
+  
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 
 convert(sys.argv[1])

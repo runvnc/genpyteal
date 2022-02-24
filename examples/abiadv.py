@@ -113,8 +113,7 @@ def show_inventory_():
   while i < inv.size:
     print(abi.String(inv[i]).value)
     i = i + 1
-  print(resetColor)
-  
+  print(resetColor)  
   return 1
 
 def show_junk():    
@@ -178,6 +177,7 @@ def encounter():
 def buy_(asset, what):  
   if find_payment(20000):
     Begin()
+    
     SetFields({
       TxnField.type_enum: TxnType.AssetTransfer,
       TxnField.sender: app_address,
@@ -206,6 +206,7 @@ def find_payment(amount):
 def find_axfer(assetid):
   i = 0
   found = 0
+  
   while i < Global.group_size:
     if (Gtxn[i].asset_id == assetid and 
         Gtxn[i].asset_receiver == Global.current_application_address and 
