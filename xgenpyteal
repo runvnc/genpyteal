@@ -417,26 +417,24 @@ def strings(i):
 progroot = 0
 
 def abimethod(d):
-  stat('abimethod')
-  if hasattr(d, 'return_annotation') and d.return_annotation is not None:
-    
-    todel = ''
+  stat_('/ abimethod')
+  if hasattr(d, 'return_annotation') and d.return_annotation is not None:    
+    todel = -1
     n = 0
     for dd in d.decorators:
       stat('dumps')
       dd_str = dd.dumps()
       if 'Subroutine' in dd_str:
         stat('ret dumps')
-        todel = dd_str
+        todel = n
       n = n + 1
         
-    #if todel != '':
-      
-    #  del d.decorators[todel]
-    #stat('insert')
-    #d.decorators.insert(0,'@staticmethod')
-    #stat('insert 2')
-    #d.decorators.insert(1,'@ABIMethod')
+    if todel != -1:
+      del d.decorators[todel]
+    stat('insert')
+    d.decorators.insert(0,'@staticmethod')
+    stat('insert 2')
+    d.decorators.insert(1,'@ABIMethod')
     
 
 def app_ops(d):
@@ -586,28 +584,18 @@ def add_cache(cache_key, source):
     f.write(source)
     #print("wrote function ",red.name," to cache file: ", cache_key)
 
-def getsig(full, val):
-  fulllines = full.split('\n')
-  vallines = val.split('\n')
-  l = 0
-  sig = ''
-  while fulllines[l] != vallines[l]:
-    sig += fulllines[l] + '\n'
-    l += 1
-  return sig
 
-def procdefs(rd, parent, i):
-  source = rd.dumps()  
+#RedBaron(NodeList.from_fst(json.load(f)))
+#json.dump(root.fst(), output)
+
+
+def procdefs(source):
   key = str(hash(source))
   rr = cached(key)
   if rr:
-    #rd.value = rr
-    red = RedBaron(rr)
-    findmap(red, 'decorator', decs)
-    stat('cache load')
-    stat_('\n--- '+rd.name+' ---\n')
-    return
-  stat_('\n--- '+rd.name+' ---\n')
+    stat_('\ncache load')
+    return rr
+
   red = RedBaron(source)[0]
   findmap(red, 'def', txnargs)
  
@@ -631,13 +619,42 @@ def procdefs(rd, parent, i):
   findmap(red, 'def', fixreturns)
   stat('def..')
   findmap(red, 'def', addreturns)
+
+  findmap(red, 'decorator', decs)
   
   stat('strings..')
   findmap(red, 'string', strings)
+
+  global isabi
+  if isabi:
+    findmap(red, 'def', abimethod)
+    findmap(red, 'def', app_ops)
+
   sys.stderr.write(f"\n")
   outsource = red.dumps()
-  parent[i] = outsource
   add_cache(key, outsource)
+  return outsource
+
+isabi = False
+
+def sections(source):
+  groups = []
+  lines = source.split('\n')
+  curr = ''
+  last_dec = False
+  for line in lines:
+    is_dec = line.startswith('@')
+    is_def = line.startswith('def ')
+    if ((not last_dec) and is_def) or is_dec:
+      if len(curr)>0:
+        groups.append(curr)
+        stat_('Made new group.')
+        curr = ''
+    curr += line+'\n'
+    last_dec = is_dec
+  if len(curr)>0:
+    groups.append(curr)
+  return groups
 
 def convert(fname):
   sys.stderr.write("genpyteal version 3.0.0\n")
@@ -650,6 +667,7 @@ def convert(fname):
   red = RedBaron(source)
   stat('Parsed file..')
 
+  global isabi
   isabi = usesabi(red)
     
   sig = red.filter(isSigDef)
@@ -661,17 +679,25 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  for i, d in enumerate(red):
+  source = red.dumps()
+  chunks = sections(source)
+
+  output = ''
+  
+  for src in chunks:
     try:
-      if d.type == 'def':
-        procdefs(d, red, i)
-    except:
-      
+      newsrc = procdefs(src)
+      output += newsrc
+    except BaseException as err:
+      sys.stderr.write('procdef error')
+      sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+      sys.stderr.write(traceback.format_exc())              
       pass
 
   if isabi:
-    findmap(red, 'def', abimethod)
-    findmap(red, 'def', app_ops)
+    #findmap(red, 'def', abimethod)
+    #findmap(red, 'def', app_ops)
+    red = RedBaron(output)
     abiapp(red)
     return
 
@@ -679,7 +705,7 @@ def convert(fname):
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(simpleReplaces(dropReturns(red.dumps())))
+  print(simpleReplaces(dropReturns(output)))
   
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 
