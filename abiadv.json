@@ -4,12 +4,6 @@
             "name": "buy",
             "args": [
                 {
-                    "type": "axfer"
-                },
-                {
-                    "type": "pay"
-                },
-                {
                     "type": "asset"
                 },
                 {

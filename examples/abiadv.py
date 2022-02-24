@@ -114,7 +114,6 @@ def show_inventory_():
     print(abi.String(inv[i]).value)
     i = i + 1
   print(resetColor)
-
   
   return 1
 
@@ -134,7 +133,7 @@ def show_at_location_():
     while i < items.size:
       print(abi.String(items[i]).value)
       i = i + 1
-    
+
   print(resetColor)
 
 def printitem(i):

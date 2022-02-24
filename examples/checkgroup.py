@@ -10,7 +10,7 @@ def no_rekey(i):
 
 def verify_payment(i):
   Assert( Gtxn[i].receiver == PAYTO and
-          Gtxn[i].amount == Int(FEE) and
+          Gtxn[i].amount == FEE and
           Gtxn[i].type_enum == TxnType.Payment )
          
 def app():
@@ -21,5 +21,5 @@ def app():
 
   verify_payment(1)
 
-  App.globalPut('lastPaymentFrom', Gtxn[1].sender)
+  gput('lastPaymentFrom', Gtxn[1].sender)
   Approve()

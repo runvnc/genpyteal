@@ -7,6 +7,9 @@ from collections.abc import Iterable
 import os
 import re
 from pathlib import Path
+from os.path import exists
+
+os.environ["PYTHONHASHSEED"] = "0"
 
 ABI = False
 
@@ -26,7 +29,7 @@ def catchdump(x):
     pass  
 
 def hasMultiStmt(node):
-  l =[]
+  l = []
   try:
     for nd in node:
       nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
@@ -103,14 +106,6 @@ def decs(d):
 
 def all(red, x = ''):
   try:
-    cache_key = hash(red)
-  except:
-    cache_key = red.dumps()
-  if cache_key in cache:
-    print("cache hit ",cache_key)
-    return
-  cache[cache_key] = True
-  try:
   
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
@@ -128,6 +123,8 @@ def all(red, x = ''):
       findmap(red, 'boolean_operator', bools)
       stat('binary_operator..')
       findmap(red, 'binary_operator', concats)
+      sys.stderr.flush()  
+
       if hasMulti or red.type == 'while':
         stat('return..')
         findmap(red, 'return..', returns)
@@ -142,6 +139,8 @@ def all(red, x = ''):
     strs_ = []
     #hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
+    sys.stderr.flush()  
+
     if hasattr(red,'type') and red.type == 'name':
       return
     try:    
@@ -185,8 +184,6 @@ def all(red, x = ''):
     sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
     sys.stderr.write(traceback.format_exc())
     pass  
-  
-  
 
 
 def bools(boolOp):
@@ -423,20 +420,25 @@ def strings(i):
 
 progroot = 0
 
-
 def abimethod(d):
-  if hasattr(d, 'return_annotation') and d.return_annotation is not None:
+  if hasattr(d, 'return_annotation') and d.return_annotation is not None:    
     todel = -1
     n = 0
     for dd in d.decorators:
-      if 'Subroutine' in dd.dumps():
+      stat('dumps')
+      dd_str = dd.dumps()
+      if 'Subroutine' in dd_str:
+        stat('ret dumps')
         todel = n
       n = n + 1
         
-    if todel >= 0:
+    if todel != -1:
       del d.decorators[todel]
+    stat('insert')
     d.decorators.insert(0,'@staticmethod')
+    stat('insert 2')
     d.decorators.insert(1,'@ABIMethod')
+    
 
 def app_ops(d):
   if d.name in ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']:
@@ -453,9 +455,13 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  #sys.stderr.write(f"{s} ")  
-  sys.stderr.write(f".")  
-  sys.stderr.flush()
+  sys.stderr.write('▂')
+  #sys.stderr.flush()
+
+def stat_(s):
+  sys.stderr.write("\033[0;32m")
+  sys.stderr.write(f"{s}")
+  #sys.stderr.flush()
 
 
 opslist = ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']
@@ -486,6 +492,9 @@ def dropReturns(currsource):
   
   return newsource
 
+def indent_staticmethods(src):
+  return src.replace('@staticmethod','  @staticmethod')
+
 def abiapp(red):
   print("""
 import json
@@ -512,6 +521,7 @@ globals().update(TealType.__members__)
   red.increase_indentation(2)
 
   dfs = dropReturns(dump_abi_defs(red))
+  dfs = indent_staticmethods(dfs)
   
   print(dfs)
 
@@ -560,8 +570,107 @@ def simpleReplaces(source):
   source = source.replace('optin', 'axfer')
   return source
 
+
+def check_cache_dir():
+  if exists(".genpyteal_cache"):
+    return
+  else:
+    os.makedirs(".genpyteal_cache")     
+
+check_cache_dir()
+
+def cached(key):  
+  if exists(".genpyteal_cache/"+key):
+    with open(".genpyteal_cache/"+key) as f:
+      contents = f.read()
+      return contents
+  else:
+    return False
+
+def add_cache(cache_key, source):
+  with open(".genpyteal_cache/"+cache_key, 'w') as f:
+    f.write(source)
+    #print("wrote function ",red.name," to cache file: ", cache_key)
+
+
+#RedBaron(NodeList.from_fst(json.load(f)))
+#json.dump(root.fst(), output)
+
+
+def procdefs(source):
+  key = str(hash(source))
+  rr = cached(key)
+  if rr:
+    stat_('▃')
+    sys.stderr.flush()
+    return rr  
+  red = RedBaron(source)
+  findmap(red, 'def', txnargs)
+ 
+  add_root_scratches(red)
+
+  findmap(red, 'binary_operator', concats)
+
+  stat('prints..')
+  findmap(red, 'print', prints)
+  sys.stderr.flush()  
+
+  findmap(red, 'name', names)
+  stat('unitary_operator..')
+  findmap(red, 'unitary_operator', unitaries)
+  stat('return..')
+  findmap(red, 'return', returns)  
+  stat('def..')
+  findmap(red, 'def', all)
+  sys.stderr.flush()  
+  stat('assign..')
+  findmap(red, 'assign', assigns)
+  stat('def..')
+
+  findmap(red, 'def', fixreturns)
+  stat('def..')
+  findmap(red, 'def', addreturns)
+  sys.stderr.flush()  
+
+  findmap(red, 'decorator', decs)
+  
+  stat('strings..')
+  findmap(red, 'string', strings)
+
+  global isabi
+  if isabi:
+    findmap(red, 'def', abimethod)
+    findmap(red, 'def', app_ops)
+    sys.stderr.flush()
+
+  sys.stderr.write(f"\n")
+  outsource = red.dumps()
+  add_cache(key, outsource)
+  return outsource
+
+isabi = False
+
+def sections(source):
+  groups = []
+  lines = source.split('\n')
+  curr = ''
+  last_dec = False
+  for line in lines:
+    is_dec = line.startswith('@')
+    is_def = line.startswith('def ')
+    if ((not last_dec) and is_def) or is_dec:
+      if len(curr)>0:
+        groups.append(curr)
+        curr = ''
+    curr += line+'\n'
+    last_dec = is_dec
+  if len(curr)>0:
+    groups.append(curr)
+  return groups
+
 def convert(fname):
   sys.stderr.write("genpyteal version 3.0.0\n")
+  stat_('')
 
   mode = 'Application'
   entry = 'app'
@@ -571,6 +680,7 @@ def convert(fname):
   red = RedBaron(source)
   stat('Parsed file..')
 
+  global isabi
   isabi = usesabi(red)
     
   sig = red.filter(isSigDef)
@@ -582,38 +692,27 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  findmap(red, 'def', txnargs)
-  #findmap(red, 'def', refargs)
- 
-  add_root_scratches(red)
+  source = red.dumps()
+  chunks = sections(source)
 
-  findmap(red, 'binary_operator', concats)
+  output = ''
+  
+  for src in chunks:
+    try:
+      newsrc = procdefs(src)
+      output += newsrc
+    except BaseException as err:
+      sys.stderr.write('procdef error')
+      sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+      sys.stderr.write(traceback.format_exc())              
+      pass
 
-  stat('prints..')
-  findmap(red, 'print', prints)
-  findmap(red, 'name', names)
-  stat('unitary_operator..')
-  findmap(red, 'unitary_operator', unitaries)
-  stat('return..')
-  findmap(red, 'return', returns)  
-  stat('def..')
-  findmap(red, 'def', all)  
-  stat('assign..')
-  findmap(red, 'assign', assigns)
-  stat('def..')
-
-  findmap(red, 'def', fixreturns)
-  stat('def..')
-  findmap(red, 'def', addreturns)
-  stat('decorator..')
-  findmap(red, 'decorator', decs)
-  stat('strings..')
-  findmap(red, 'string', strings)
-  sys.stderr.write(f"\n")    
-
+  sys.stderr.write('\033[0m\n')
+  sys.stderr.flush()
   if isabi:
-    findmap(red, 'def', abimethod)
-    findmap(red, 'def', app_ops)
+    #findmap(red, 'def', abimethod)
+    #findmap(red, 'def', app_ops)
+    red = RedBaron(output)
     abiapp(red)
     return
 
@@ -621,7 +720,7 @@ def convert(fname):
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(simpleReplaces(dropReturns(red.dumps())))
+  print(simpleReplaces(dropReturns(output)))
   
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
 
