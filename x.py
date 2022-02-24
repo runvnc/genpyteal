@@ -350,7 +350,7 @@ def setup_():
     	Return( Int(1) ) )
 
 
-set_tx_args({})
+set_tx_args({"buy": ["axfer", "pay"]})
 
 class ABIApp(DefaultApprove):
   @staticmethod

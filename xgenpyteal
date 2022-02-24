@@ -123,6 +123,8 @@ def all(red, x = ''):
       findmap(red, 'boolean_operator', bools)
       stat('binary_operator..')
       findmap(red, 'binary_operator', concats)
+      sys.stderr.flush()  
+
       if hasMulti or red.type == 'while':
         stat('return..')
         findmap(red, 'return..', returns)
@@ -137,6 +139,8 @@ def all(red, x = ''):
     strs_ = []
     #hasMulti = hasMultiStmt(red)
     scratch = getScratch(red)
+    sys.stderr.flush()  
+
     if hasattr(red,'type') and red.type == 'name':
       return
     try:    
@@ -451,13 +455,13 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  sys.stderr.write('▅')
-  sys.stderr.flush()
+  sys.stderr.write('▂')
+  #sys.stderr.flush()
 
 def stat_(s):
   sys.stderr.write("\033[0;32m")
   sys.stderr.write(f"{s}")
-  sys.stderr.flush()
+  #sys.stderr.flush()
 
 
 opslist = ['delete', 'create', 'update', 'optIn', 'closeOut', 'clearState']
@@ -596,11 +600,11 @@ def add_cache(cache_key, source):
 def procdefs(source):
   key = str(hash(source))
   rr = cached(key)
-  if rr:
+  if False and rr:
     stat_('▃')
-    return rr
-
-  red = RedBaron(source)[0]
+    sys.stderr.flush()
+    return rr  
+  red = RedBaron(source)
   findmap(red, 'def', txnargs)
  
   add_root_scratches(red)
@@ -609,13 +613,16 @@ def procdefs(source):
 
   stat('prints..')
   findmap(red, 'print', prints)
+  sys.stderr.flush()  
+
   findmap(red, 'name', names)
   stat('unitary_operator..')
   findmap(red, 'unitary_operator', unitaries)
   stat('return..')
   findmap(red, 'return', returns)  
   stat('def..')
-  findmap(red, 'def', all)  
+  findmap(red, 'def', all)
+  sys.stderr.flush()  
   stat('assign..')
   findmap(red, 'assign', assigns)
   stat('def..')
@@ -623,6 +630,7 @@ def procdefs(source):
   findmap(red, 'def', fixreturns)
   stat('def..')
   findmap(red, 'def', addreturns)
+  sys.stderr.flush()  
 
   findmap(red, 'decorator', decs)
   
@@ -633,6 +641,7 @@ def procdefs(source):
   if isabi:
     findmap(red, 'def', abimethod)
     findmap(red, 'def', app_ops)
+    sys.stderr.flush()
 
   sys.stderr.write(f"\n")
   outsource = red.dumps()
