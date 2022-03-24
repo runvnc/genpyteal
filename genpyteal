@@ -115,6 +115,9 @@ def all(red, x = ''):
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
+        elif red.decorators != None and len(red.decorators)>0 and 'inline' in red.decorators.dumps():
+          red.decorators.clear()
+          
       defnode = None
       if red.type == 'def': defnode = red
       stat('assign..')
@@ -144,7 +147,7 @@ def all(red, x = ''):
     if hasattr(red,'type') and red.type == 'name':
       return
     try:    
-      if not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
+      if red != None and not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
         for nd in red:
           if not hasattr(nd, 'find_all'): continue
           nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
@@ -228,8 +231,12 @@ def assigns(asn, parentdef_ = None):
   if parentdef is None:
     return
   parval = asn.value
-  if hasattr(parval, 'filtered'):
-    parval = parval.filtered()[0]
+  try:
+    if hasattr(parval, 'filtered'):
+      parval = parval.filtered()[0]
+  except:
+    pass
+    return
   if hasattr(parval, 'type'):  
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
@@ -368,6 +375,8 @@ def ifs(if_):
 
 def returns(ret):
   all(ret.value)
+  if not ret.value:
+    return
   ret.replace(f"Return( {ret.value.dumps().replace('return ','')} )")
 
 def fixreturns(d):
@@ -548,7 +557,7 @@ if __name__ == "__main__":
   with open("{fname}.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 
-  print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
+  print(compileTeal(app.handler(), mode=Mode.Application, version=6, assembleConstants=True))
   """
   code = code.replace('{fname}', fname)
   
@@ -722,6 +731,6 @@ def convert(fname):
 
   print(simpleReplaces(dropReturns(output)))
   
-  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
+  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=6))")
 
 convert(sys.argv[1])
