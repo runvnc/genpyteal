@@ -267,7 +267,7 @@ def calls(nd):
   try:
     if nd.type != 'call':
       return
-    if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:          
+    if nd.parent[0].value in ['Begin','Next','SetField','SetFields','Submit']:          
       nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent[0].dumps()}")
   
   except:
@@ -339,7 +339,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'application_args', 'latest_timestamp']:
+                               'group_size', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -607,6 +607,9 @@ def add_cache(cache_key, source):
 
 
 def procdefs(source):
+  if ('@verbatim' in source):
+    return source
+        
   key = str(hash(source))
   rr = cached(key)
   if rr:
