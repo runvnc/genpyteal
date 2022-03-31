@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
+import os
+import hashlib
+
 import json
 from redbaron import RedBaron
 import traceback
 import sys
 from collections.abc import Iterable
-import os
+
 import re
 from pathlib import Path
 from os.path import exists
 
-os.environ["PYTHONHASHSEED"] = "0"
+
+def hash_(s):
+  m = hashlib.sha256()  
+  m.update(s.encode('utf-8'))
+  return m.hexdigest()
 
 ABI = False
 
@@ -613,7 +620,7 @@ def procdefs(source):
   if ('@verbatim' in source):
     return source
         
-  key = str(hash(source))
+  key = hash_(source)
   rr = cached(key)
   if rr:
     stat_('▃')

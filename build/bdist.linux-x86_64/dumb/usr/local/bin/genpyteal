@@ -1,22 +1,15 @@
 #!python
-import os
-import hashlib
-
 import json
 from redbaron import RedBaron
 import traceback
 import sys
 from collections.abc import Iterable
-
+import os
 import re
 from pathlib import Path
 from os.path import exists
 
-
-def hash_(s):
-  m = hashlib.sha256()  
-  m.update(s.encode('utf-8'))
-  return m.hexdigest()
+os.environ["PYTHONHASHSEED"] = "0"
 
 ABI = False
 
@@ -604,6 +597,8 @@ def cached(key):
       contents = f.read()
       return contents
   else:
+    sys.stderr.writeln("Cache miss for key " + key)
+    sys.stderr.flush()
     return False
 
 def add_cache(cache_key, source):
@@ -620,7 +615,7 @@ def procdefs(source):
   if ('@verbatim' in source):
     return source
         
-  key = hash_(source)
+  key = str(hash(source))
   rr = cached(key)
   if rr:
     stat_('▃')
