@@ -417,12 +417,15 @@ def ints(i):
   i.replace(f"Int({i.value})")
 
 def strings(i):
-  try:
+  try:      
     if i.parent.type == 'def_argument':
       return
     parval = i.parent.parent.parent.value[0].value
     if parval == 'Bytes' or parval == 'Addr':
       return
+    if 'TMPL' in i.dumps():
+      return
+    
   except:
     pass
   i.replace(f"Bytes({i.dumps()})")
@@ -681,7 +684,7 @@ def sections(source):
   return groups
 
 def convert(fname):
-  sys.stderr.write("genpyteal version 4.0.0\n")
+  sys.stderr.write("genpyteal version 5.0.0\n")
   stat_('')
 
   mode = 'Application'

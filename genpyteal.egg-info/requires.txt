@@ -1,2 +1,2 @@
-pyteal-utils
 redbaron
+pyteal-utils

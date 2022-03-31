@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!python
 import json
 from redbaron import RedBaron
 import traceback
@@ -115,6 +115,9 @@ def all(red, x = ''):
             red.decorators.append("@Subroutine(uint64)")
           else:
             red.decorators.append("@Subroutine(TealType.none)")
+        elif red.decorators != None and len(red.decorators)>0 and 'inline' in red.decorators.dumps():
+          red.decorators.clear()
+          
       defnode = None
       if red.type == 'def': defnode = red
       stat('assign..')
@@ -144,7 +147,7 @@ def all(red, x = ''):
     if hasattr(red,'type') and red.type == 'name':
       return
     try:    
-      if not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
+      if red != None and not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
         for nd in red:
           if not hasattr(nd, 'find_all'): continue
           nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
@@ -228,8 +231,12 @@ def assigns(asn, parentdef_ = None):
   if parentdef is None:
     return
   parval = asn.value
-  if hasattr(parval, 'filtered'):
-    parval = parval.filtered()[0]
+  try:
+    if hasattr(parval, 'filtered'):
+      parval = parval.filtered()[0]
+  except:
+    pass
+    return
   if hasattr(parval, 'type'):  
     if parval.type == 'boolean' or parval.type == 'comparison' or parval.type in 'boolean_operator':
       return
@@ -260,7 +267,7 @@ def calls(nd):
   try:
     if nd.type != 'call':
       return
-    if nd.parent[0].value in ['Begin','SetField','SetFields','Submit']:          
+    if nd.parent[0].value in ['Begin','Next','SetField','SetFields','Submit']:          
       nd.parent[0].replace(f"InnerTxnBuilder.{nd.parent[0].dumps()}")
   
   except:
@@ -332,7 +339,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'application_args', 'latest_timestamp']:
+                               'group_size', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -368,6 +375,8 @@ def ifs(if_):
 
 def returns(ret):
   all(ret.value)
+  if not ret.value:
+    return
   ret.replace(f"Return( {ret.value.dumps().replace('return ','')} )")
 
 def fixreturns(d):
@@ -408,12 +417,15 @@ def ints(i):
   i.replace(f"Int({i.value})")
 
 def strings(i):
-  try:
+  try:      
     if i.parent.type == 'def_argument':
       return
     parval = i.parent.parent.parent.value[0].value
     if parval == 'Bytes' or parval == 'Addr':
       return
+    if 'TMPL' in i.dumps():
+      return
+    
   except:
     pass
   i.replace(f"Bytes({i.dumps()})")
@@ -548,7 +560,7 @@ if __name__ == "__main__":
   with open("{fname}.json", "w") as f:
     f.write(json.dumps(currint, indent=4))
 
-  print(compileTeal(app.handler(), mode=Mode.Application, version=5, assembleConstants=True))
+  print(compileTeal(app.handler(), mode=Mode.Application, version=6, assembleConstants=True))
   """
   code = code.replace('{fname}', fname)
   
@@ -598,6 +610,9 @@ def add_cache(cache_key, source):
 
 
 def procdefs(source):
+  if ('@verbatim' in source):
+    return source
+        
   key = str(hash(source))
   rr = cached(key)
   if rr:
@@ -669,7 +684,7 @@ def sections(source):
   return groups
 
 def convert(fname):
-  sys.stderr.write("genpyteal version 3.0.0\n")
+  sys.stderr.write("genpyteal version 5.0.0\n")
   stat_('')
 
   mode = 'Application'
@@ -722,6 +737,6 @@ def convert(fname):
 
   print(simpleReplaces(dropReturns(output)))
   
-  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=5))")
+  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=6))")
 
 convert(sys.argv[1])
