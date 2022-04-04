@@ -346,7 +346,7 @@ def names(nd):
                                'on_completion', 'rekey_to', 'config_asset', 'config_asset_total', 'config_asset_decimals',
                                'config_asset_default_frozen', 'config_asset_unit_name','config_asset_name', 'config_asset_url',
                                'config_asset_manager', 'created_asset_id', 'created_application_id', 'current_application_address',
-                               'group_size', 'latest_timestamp']:
+                               'caller_app_address', 'group_size', 'latest_timestamp']:
 
           if nd.parent.value[0].value in ['Txn', 'Gtxn', 'Global']:
             try:
@@ -585,7 +585,8 @@ def simpleReplaces(source):
   source = source.replace('lput(', 'App.localPut(0,')
   source = source.replace('gput(', 'App.globalPut(')
   source = source.replace('holding(', 'AssetHolding.balance(')
-  source = source.replace('app_address','Global.current_application_address()')
+  source = source.replace('app_address','Global.current_application_address()')  
+  source = source.replace('args_', 'Txn.application_args')
   source = source.replace('optin', 'axfer')
   return source
 
