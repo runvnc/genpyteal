@@ -585,6 +585,7 @@ def simpleReplaces(source):
   source = source.replace('lput(', 'App.localPut(0,')
   source = source.replace('gput(', 'App.globalPut(')
   source = source.replace('holding(', 'AssetHolding.balance(')
+  source = source.replace('caller_app_address','Global.caller_app_address()')  
   source = source.replace('app_address','Global.current_application_address()')  
   source = source.replace('args_', 'Txn.application_args')
   source = source.replace('optin', 'axfer')
