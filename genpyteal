@@ -585,10 +585,13 @@ def simpleReplaces(source):
   source = source.replace('lput(', 'App.localPut(0,')
   source = source.replace('gput(', 'App.globalPut(')
   source = source.replace('holding(', 'AssetHolding.balance(')
-  source = source.replace('app_address','Global.current_application_address()')  
-  source = source.replace('caller_app_addr','Global.caller_app_address()')    
+  source = source.replace('app_address','Global.current_application_address()')
   source = source.replace('args_', 'Txn.application_args')
   source = source.replace('optin', 'axfer')
+  return source
+
+def simpleReplacesOnce(source):
+  source = source.replace('caller_Global.current_application_address()','Global.caller_app_address()')
   return source
 
 
@@ -744,7 +747,7 @@ def convert(fname):
   print("from pyteal import *\n")
   print("globals().update(TealType.__members__)\n")
 
-  print(simpleReplaces(dropReturns(output)))
+  print(simpleReplacesOnce(simpleReplaces(dropReturns(output))))
   
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=6))")
 
