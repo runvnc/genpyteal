@@ -408,6 +408,8 @@ def ints(i):
       parname = i.parent.parent.parent.value[0].value
       if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
         return
+      if parname.endswith('_'):
+        return
     try:      
       if hasattr(i.parent.parent, 'value') and hasattr(i.parent.parent.value, 'pop'):
         if i.parent.parent.value[1].value in ['application_args', 'Gtxn']:
