@@ -11,6 +11,7 @@ from collections.abc import Iterable
 import re
 from pathlib import Path
 from os.path import exists
+from types import SimpleNamespace
 
 
 def hash_(s):
@@ -80,7 +81,9 @@ def hasScratch(red, varname):
     parentdef = red.parent_find('def')
     red.parentdef = parentdef
   if parentdef is None:
-    parentdef = { 'name': 'root'}
+    parentdef = SimpleNamespace(name='root')
+    sys.stderr.write(' no parentdef found for '+varname)
+    #parentdef = { 'name': 'root'}
     
   if parentdef.name in scratches_added and varname in scratches_added[parentdef.name]:
     return True
@@ -112,8 +115,7 @@ def decs(d):
     d.parent.decorators.append('@Subroutine(TealType.bytes)')
 
 def all(red, x = ''):
-  try:
-  
+  try:  
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
       if red.type == 'def' and red.name != 'app' and red.name != 'sig':
@@ -157,12 +159,14 @@ def all(red, x = ''):
       if red != None and not hasattr(red, 'title') and not (red.type == 'binary_operator') and hasattr(red, '__iter__'):
         for nd in red:
           if not hasattr(nd, 'find_all'): continue
-          nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'while'], recursive=False)
+          nodes = nd.find_all(['ifelseblock','atomtrailers', 'return', 'name', 'while'], recursive=False)
           if hasMulti:
             findmap(nodes, 'return', returns)
-          
+          nodes = nodes.filter(lambda n: n.type != 'name' or hasScratch(n, n.dumps()))
+                   
           strs = nodes.map(catchdump)
           strs = strs.filter(lambda x: x != None)
+          
           strs_.extend(strs)
     except BaseException as err:
       sys.stderr.write('looperr')
@@ -230,12 +234,21 @@ def concats(ct):
 def assigns(asn, parentdef_ = None):  
   dumps = asn.value.dumps()  
   if ('ScratchVar' in dumps or 'StringArray' in dumps or 
-     'DynamicArray' in dumps or 'AssetParam' in dumps or 'maybe' in asn.target.dumps()):
+     'DynamicArray' in dumps or 'maybe' in asn.target.dumps()):
     return
+
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
   else:
     parentdef = parentdef_
+
+  if 'AssetParam' in dumps:  
+    if not parentdef.name in scratches_added:
+      scratches_added[parentdef.name] = {}
+    sys.stderr.write('Adding scratch for asset param '+asn.target.value)      
+    scratches_added[parentdef.name][asn.target.value] = True
+    return
+
   if parentdef is None:
     return
   parval = asn.value
