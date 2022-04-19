@@ -51,7 +51,7 @@ def getScratch(red):
     return ''
   s = red.find_all('assign')
   if isinstance(s, list):
-    s = s.filter(lambda x: 'ScratchVar' in x)
+    s = s.filter(lambda x: 'ScratchVar' in x or 'AssetParam' in x)
   
   s2 = red.find_all('name')
   #if isinstance(s2, list):
@@ -229,7 +229,8 @@ def concats(ct):
 
 def assigns(asn, parentdef_ = None):  
   dumps = asn.value.dumps()  
-  if 'ScratchVar' in dumps or 'StringArray' in dumps or 'DynamicArray' in dumps or 'maybe' in asn.target.dumps():
+  if ('ScratchVar' in dumps or 'StringArray' in dumps or 
+     'DynamicArray' in dumps or 'AssetParam' in dumps or 'maybe' in asn.target.dumps()):
     return
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -408,7 +409,7 @@ def ints(i):
       parname = i.parent.parent.parent.value[0].value
       if parname == 'Int' or parname == 'Arg' or parname in ['application_args', 'Gtxn']:
         return
-      if parname.endswith('_'):
+      if hasattr(parname,'endswith') and parname.endswith('_'):
         return
     try:      
       if hasattr(i.parent.parent, 'value') and hasattr(i.parent.parent.value, 'pop'):
