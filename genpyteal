@@ -344,6 +344,8 @@ def names(nd):
     
   if nd.dumps()+'.load()' in nd.parent.dumps() or 'maybe' in nd.parent.dumps():
     return
+  if '.value()' in nd.parent.dumps():
+    return
   if nd.dumps()+'.store(' in nd.parent.dumps():
     return
 
