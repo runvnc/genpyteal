@@ -52,7 +52,7 @@ def getScratch(red):
     return ''
   s = red.find_all('assign')
   if isinstance(s, list):
-    s = s.filter(lambda x: 'ScratchVar' in x or 'AssetParam' in x)
+    s = s.filter(lambda x: 'ScratchVar' in x or 'AssetParam' in x or 'AssetHolding' in x)
   
   s2 = red.find_all('name')
   #if isinstance(s2, list):
@@ -242,7 +242,7 @@ def assigns(asn, parentdef_ = None):
   else:
     parentdef = parentdef_
 
-  if 'AssetParam' in dumps:  
+  if 'AssetParam' in dumps or 'AssetHolding' in dumps:  
     if not parentdef.name in scratches_added:
       scratches_added[parentdef.name] = {}
     sys.stderr.write('Adding scratch for asset param '+asn.target.value)      
