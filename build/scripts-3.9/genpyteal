@@ -641,6 +641,7 @@ def add_cache(cache_key, source):
 #RedBaron(NodeList.from_fst(json.load(f)))
 #json.dump(root.fst(), output)
 
+ver = 6
 
 def procdefs(source):
   if ('@verbatim' in source):
@@ -730,11 +731,13 @@ def convert(fname):
 
   global isabi
   isabi = usesabi(red)
-    
+  global ver
+  ver = 6
   sig = red.filter(isSigDef)
   if sig: 
     mode = 'Signature'
     entry = 'sig'
+    ver = 5
     stat('LogicSig')
   else:
     stat('Application')
@@ -770,6 +773,6 @@ def convert(fname):
 
   print(simpleReplacesOnce(simpleReplaces(dropReturns(output))))
   
-  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=6))")
+  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version={ver}))")
 
 convert(sys.argv[1])
