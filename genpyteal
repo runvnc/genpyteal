@@ -118,6 +118,7 @@ def all(red, x = ''):
   try:  
     hasMulti = hasMultiStmt(red)
     if hasattr(red,'type'):
+      stat(red.type+'-->all')
       if red.type == 'def' and red.name != 'app' and red.name != 'sig':
         if len(red.decorators) == 0:
           if 'return' in red.dumps() or 'Return' in red.dumps():
@@ -492,7 +493,9 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  sys.stderr.write('▂')
+  sys.stderr.write(s)
+  sys.stderr.write("\n")
+  #sys.stderr.write('▂')
   #sys.stderr.flush()
 
 def stat_(s):
@@ -638,6 +641,7 @@ def add_cache(cache_key, source):
 #RedBaron(NodeList.from_fst(json.load(f)))
 #json.dump(root.fst(), output)
 
+ver = 6
 
 def procdefs(source):
   if ('@verbatim' in source):
@@ -727,11 +731,13 @@ def convert(fname):
 
   global isabi
   isabi = usesabi(red)
-    
+  global ver
+  ver = 6
   sig = red.filter(isSigDef)
   if sig: 
     mode = 'Signature'
     entry = 'sig'
+    ver = 5
     stat('LogicSig')
   else:
     stat('Application')
@@ -767,6 +773,6 @@ def convert(fname):
 
   print(simpleReplacesOnce(simpleReplaces(dropReturns(output))))
   
-  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version=6))")
+  print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version={ver}))")
 
 convert(sys.argv[1])
