@@ -737,7 +737,7 @@ def convert(fname):
   if sig: 
     mode = 'Signature'
     entry = 'sig'
-    ver = 4
+    ver = 6
     stat('LogicSig')
   else:
     stat('Application')
