@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!python
 import os
 import hashlib
 
@@ -611,9 +611,6 @@ def simpleReplaces(source):
   source = source.replace('args_', 'Txn.application_args')
   source = source.replace('optin', 'axfer')
   source = source.replace('VrfVerify(', 'VrfVerify.algorand(')
-  source = source.replace('out[0]', 'output_slots[0]')
-  source = source.replace('out[1]', 'output_slots[1]')
- 
   return source
 
 def simpleReplacesOnce(source):
