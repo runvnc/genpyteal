@@ -223,11 +223,15 @@ def unitaries(un):
 def concats(ct):
   all(ct.first)
   all(ct.second)
-  if ct.first.type == 'string' or ct.second.type == 'string':
+  valstr1 = hasattr(ct.first.value, 'startswith')
+  valstr2 = hasattr(ct.second.value, 'startswith')
+
+  if ( (valstr1 and ct.first.value.startswith('str')) or (valstr2 and ct.second.value.startswith('str')) or
+     ct.first.type == 'string' or ct.second.type == 'string'):
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
     if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 
-       ct.first.value[0].value == 'Concat' or ct.second.value[0].value == 'Concat'):
+        ct.first.value[0].value == 'Concat' or ct.second.value[0].value == 'Concat'):
       ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")  
   except:
     pass
@@ -258,6 +262,7 @@ def assigns(asn, parentdef_ = None):
     if hasattr(parval, 'filtered'):
       parval = parval.filtered()[0]
   except:
+    status(asn.target.value+' ' + 'break assign')
     pass
     return
   if hasattr(parval, 'type'):  
@@ -722,6 +727,9 @@ def sections(source):
     groups.append(curr)
   return groups
 
+def fixFuncSpacing(s):
+  return s.replace("\ndef","\n\ndef")
+
 def convert(fname):
   sys.stderr.write("genpyteal version 5.0.0\n")
   stat_('')
@@ -757,6 +765,7 @@ def convert(fname):
     try:
       newsrc = procdefs(src)
       output += newsrc
+      output += '\n'
     except BaseException as err:
       sys.stderr.write('procdef error')
       sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
@@ -780,7 +789,5 @@ def convert(fname):
   
   print(f"if __name__ == \"__main__\":\n    print(compileTeal({entry}(), mode=Mode.{mode}, version={ver}))")
 
-
-print(f"# genpyteal version 3.1.1")
 
 convert(sys.argv[1])
