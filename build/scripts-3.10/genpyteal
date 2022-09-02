@@ -239,7 +239,7 @@ def concats(ct):
 def assigns(asn, parentdef_ = None):  
   dumps = asn.value.dumps()  
   if ('ScratchVar' in dumps or 'StringArray' in dumps or 
-      'Verify' in dumps or
+      'Verify' in dumps or 'AppParam' in dumps or
      'DynamicArray' in dumps or 'maybe' in asn.target.dumps()):
     return
 
@@ -248,7 +248,7 @@ def assigns(asn, parentdef_ = None):
   else:
     parentdef = parentdef_
 
-  if 'AssetParam' in dumps or 'AssetHolding' in dumps:  
+  if 'AssetParam' in dumps or 'AssetHolding' in dumps or 'AppParam' in dumps:  
     if not parentdef.name in scratches_added:
       scratches_added[parentdef.name] = {}
     sys.stderr.write('Adding scratch for asset param '+asn.target.value)      
