@@ -1,4 +1,4 @@
-#class Senior:
+class Senior:
 
   @verbatim
   def xini(name, age):

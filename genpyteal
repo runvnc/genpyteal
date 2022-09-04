@@ -723,20 +723,33 @@ isabi = False
 classnames = []
 
 def classes(red):
-  nodes = red.find_all(['classes'], recursive=False)
+  stat('Top of classes function')
+  nodes = red.find_all(['class'], recursive=False)
   
+  toremove = [] 
   output = ''
   for nd in nodes:
+    stat('Processing class '+nd.name)
+    classout = ''
     classnames.append(nd.name)
-    source = nd.value.decrease_indentation(2)
+    toremove.append(nd.value.dumps())
+    nd.value.decrease_indentation(2)
+    source = nd.value.dumps()
     chunks = sections(source)
     for src in chunks:
       try:
         newsrc = procdefs(src)
-        output += newsrc
-        output += '\n'
-    output += '\n'
-  return output 
+        classout += '  ' + newsrc.replace('\ndef', '\n  def')
+        classout += '\n'
+      except BaseException as err:
+        sys.stderr.write('procdef error')
+        sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+        sys.stderr.write(traceback.format_exc())              
+        pass
+    classout = f"class {nd.name}{classout}\n".replace('\n  ','\n    ')
+    output += classout
+
+  return output, toremove
 
 def sections(source):
   groups = []
@@ -787,7 +800,12 @@ def convert(fname):
 
   output = ''
  
-  output += classes(red)
+  outputx, toremove = classes(red)
+  output += outputx
+
+  for nd in red:
+    if nd.type == 'class':
+      nd.replace('\n') 
 
   source = red.dumps()
 
