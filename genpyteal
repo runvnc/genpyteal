@@ -262,7 +262,7 @@ def assigns(asn, parentdef_ = None):
     if hasattr(parval, 'filtered'):
       parval = parval.filtered()[0]
   except:
-    status(asn.target.value+' ' + 'break assign')
+    stat(asn.target.value+' ' + 'break assign')
     pass
     return
   if hasattr(parval, 'type'):  
@@ -279,16 +279,27 @@ def assigns(asn, parentdef_ = None):
       typ = 'TealType.bytes'
     else:
       typ = 'TealType.uint64'
-    makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
+    stat("About to make scratch")
+    if hasattr(asn.target.value, 'dumps'):
+      makescratch = f"{asn.target.value.dumps()} = ScratchVar({typ})\n"
+    else:
+      makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
+    stat("A")
+    stat("makescratch is "+makescratch)
     #asn.insert_before(makescratch)
     parentdef.insert(0,makescratch)
-    
+    stat("B")
     if not parentdef.name in scratches_added:
       scratches_added[parentdef.name] = {}    
       
     scratches_added[parentdef.name][asn.target.value] = True
-    
-  asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
+  stat("C")
+  if hasattr(asn.target.value, 'dumps'):  
+    asn.replace(f"{asn.target.value.dumps()}.store({asn.value.dumps()})")
+  else:
+    asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
+
+  stat("D")
 
 def calls(nd):
   #all(nd.value)
@@ -709,6 +720,7 @@ def procdefs(source):
 
 isabi = False
 
+
 def sections(source):
   groups = []
   lines = source.split('\n')
@@ -756,7 +768,10 @@ def convert(fname):
     stat('Application')
   progroot = red
 
+  source, classes = classes(red)
+
   source = red.dumps()
+
   chunks = sections(source)
 
   output = ''
