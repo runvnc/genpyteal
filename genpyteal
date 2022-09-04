@@ -720,6 +720,23 @@ def procdefs(source):
 
 isabi = False
 
+classnames = []
+
+def classes(red):
+  nodes = red.find_all(['classes'], recursive=False)
+  
+  output = ''
+  for nd in nodes:
+    classnames.append(nd.name)
+    source = nd.value.decrease_indentation(2)
+    chunks = sections(source)
+    for src in chunks:
+      try:
+        newsrc = procdefs(src)
+        output += newsrc
+        output += '\n'
+    output += '\n'
+  return output 
 
 def sections(source):
   groups = []
@@ -768,13 +785,13 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  source, classes = classes(red)
+  output = ''
+ 
+  output += classes(red)
 
   source = red.dumps()
 
   chunks = sections(source)
-
-  output = ''
   
   for src in chunks:
     try:
