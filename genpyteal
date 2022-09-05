@@ -514,8 +514,9 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  sys.stderr.write(s)
-  sys.stderr.write("\n")
+  sys.stderr.write('.')
+  #sys.stderr.write(s)
+  #sys.stderr.write("\n")
   #sys.stderr.write('▂')
   #sys.stderr.flush()
 
