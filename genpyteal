@@ -243,6 +243,10 @@ def assigns(asn, parentdef_ = None):
      'DynamicArray' in dumps or 'maybe' in asn.target.dumps()):
     return
 
+  for cls in classnames:
+    if cls in dumps:
+      return
+
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
   else:
