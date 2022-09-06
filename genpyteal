@@ -725,36 +725,73 @@ def procdefs(source):
 
 isabi = False
 
+def fixClassIndents(source):
+  lines = source.split('\n')
+  out = ''
+  for line in lines:
+    if line.startswith('class'):
+      out += line + '\n'
+      continue
+
+    if line.startswith('def'):
+      out += '  ' + line + '\n'
+      continue
+   
+    if line.startswith('    '):
+      out += line + '\n'
+      continue
+
+    if line.startswith('  '):
+      out += '  ' + line + '\n'
+      continue
+   
+    out += '  ' + line + '\n'
+    continue
+
+  return out
+           
+
 classnames = []
 
 def classes(red):
   stat('Top of classes function')
-  nodes = red.find_all(['class'], recursive=False)
+  #nodes = red.find_all(['class'], recursive=False)
   
-  toremove = [] 
+  outputx = ''
   output = ''
-  for nd in nodes:
+  foundclass = False
+  for nd in red: #nodes
+    if nd.type == 'class':
+      foundclass = True
+    if not foundclass:
+      output += nd.dumps()
+      continue
+    if foundclass and nd.type != 'class':
+      outputx += nd.dumps()
+      continue
     stat('Processing class '+nd.name)
     classout = ''
     classnames.append(nd.name)
-    toremove.append(nd.value.dumps())
     nd.value.decrease_indentation(2)
     source = nd.value.dumps()
     chunks = sections(source)
     for src in chunks:
       try:
         newsrc = procdefs(src)
-        classout += '  ' + newsrc.replace('\ndef', '\n  def')
+        classout +=  newsrc #.replace('\n', '\n  ')
         classout += '\n'
       except BaseException as err:
         sys.stderr.write('procdef error')
         sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
         sys.stderr.write(traceback.format_exc())              
         pass
-    classout = f"class {nd.name}{classout}\n".replace('\n  ','\n    ')
+    classout = f"class {nd.name}:{classout}\n"
+    classout = fixClassIndents(classout)
+
+    #.replace('\n  ','\n    ')
     output += classout
 
-  return output, toremove
+  return output, outputx
 
 def sections(source):
   groups = []
@@ -803,16 +840,18 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  output = ''
- 
-  outputx, toremove = classes(red)
+  output = ''  
+
+  outputx, afterclass = classes(red)
   output += outputx
 
-  for nd in red:
-    if nd.type == 'class':
-      nd.replace('\n') 
+  source = afterclass
 
-  source = red.dumps()
+  #for nd in red:
+  #  if nd.type == 'class':     
+  #    nd.replace('\n') 
+
+  #source = red.dumps()
 
   chunks = sections(source)
   

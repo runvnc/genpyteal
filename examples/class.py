@@ -1,15 +1,16 @@
+
+
+def verbatim(x):
+  pass
+
+
 class Senior:
 
   @verbatim
-  def xini(name, age):
-    self.age_ = age
-    self.name_ = name
+  def __init__(self, name, age):
+    self.age_ = Int(age)
+    self.name_ = Bytes(name)
 
-  @inline
-  def init(self):
-    self.age = Int(self.age_)
-    self.name = Bytes(self.name_)
-   
   @inline
   def isEligible(self):
     return self.age > 65
@@ -21,13 +22,19 @@ class Senior:
     else:
       print(self.name + " is too young.")
 
+
 def app():
   mary = Senior('Mary', 62)
-  mary.init()
   tom = Senior('Tom', 75)
-  tom.init()
 
   mary.evalAndPrint()
   tom.evalAndPrint()
 
   return 1
+
+
+  #@inline
+  #def init(self):
+  #  self.age = Int(self.age_)
+  #  self.name = Bytes(self.name_)
+ 
