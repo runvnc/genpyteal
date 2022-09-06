@@ -247,6 +247,10 @@ def assigns(asn, parentdef_ = None):
     if cls in dumps:
       return
 
+  if 'self' in asn.target.dumps():
+    stat('Found self:\n')
+    stat(asn.dumps())
+
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
   else:
@@ -514,9 +518,9 @@ def isSigDef(nd):
   return False
 
 def stat(s):
-  sys.stderr.write('.')
-  #sys.stderr.write(s)
-  #sys.stderr.write("\n")
+  #sys.stderr.write('.')
+  sys.stderr.write(s)
+  sys.stderr.write("\n")
   #sys.stderr.write('▂')
   #sys.stderr.flush()
 

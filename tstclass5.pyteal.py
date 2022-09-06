@@ -2,19 +2,15 @@ from pyteal import *
 
 globals().update(TealType.__members__)
 
-
-
 def verbatim(x):
-  pass
-
+  return x
 
 class Senior:
   
-  
   @verbatim
   def __init__(self, name, age):
-    self.age_ = Int(age)
-    self.name_ = Bytes(name)
+    self.age = age
+    self.name = name
   
   
   def isEligible(self):
@@ -22,14 +18,14 @@ class Senior:
   
   
   def evalAndPrint(self):
-    return If( self.isEligible(), 
-          Log(Concat(self.name,Bytes(" is eligible.")))
+    a = ScratchVar(TealType.uint64)
+    return  Seq(
+    	a.store(Int(10)),
+    	If( self.isEligible(), 
+          Log(Concat(self.name,Concat(Bytes(" is eligible. "),Itob(a.load()))))
         , 
           Log(Concat(self.name,Bytes(" is too young.")))
-    
-    
-    
-       )
+       ) )
   
   
   

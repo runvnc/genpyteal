@@ -1,15 +1,11 @@
-
-
 def verbatim(x):
-  pass
-
+  return x
 
 class Senior:
-
   @verbatim
   def __init__(self, name, age):
-    self.age_ = Int(age)
-    self.name_ = Bytes(name)
+    self.age = age
+    self.name = name
 
   @inline
   def isEligible(self):
@@ -17,8 +13,9 @@ class Senior:
 
   @inline
   def evalAndPrint(self):
+    a = 10
     if self.isEligible():
-      print(self.name + " is eligible.")
+      print(self.name + " is eligible. " + Itob(a))
     else:
       print(self.name + " is too young.")
 
