@@ -227,7 +227,8 @@ def concats(ct):
   valstr2 = hasattr(ct.second.value, 'startswith')
 
   if ( (valstr1 and ct.first.value.startswith('str')) or (valstr2 and ct.second.value.startswith('str')) or
-     ct.first.type == 'string' or ct.second.type == 'string'):
+        ct.first.type == 'string' or ct.second.type == 'string' or 
+       ( 'Itob' in ct.first.dumps() or 'Itob' in ct.second.dumps() )):
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
     if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 

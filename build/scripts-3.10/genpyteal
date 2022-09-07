@@ -227,7 +227,8 @@ def concats(ct):
   valstr2 = hasattr(ct.second.value, 'startswith')
 
   if ( (valstr1 and ct.first.value.startswith('str')) or (valstr2 and ct.second.value.startswith('str')) or
-     ct.first.type == 'string' or ct.second.type == 'string'):
+        ct.first.type == 'string' or ct.second.type == 'string' or 
+       ( 'Itob' in ct.first.dumps() or 'Itob' in ct.second.dumps() )):
     ct.replace(f"Concat({ct.first.dumps()},{ct.second.dumps()})")
   try:
     if (ct.first.value[0].value == 'Bytes' or ct.second.value[0].value == 'Bytes' or 
@@ -242,6 +243,14 @@ def assigns(asn, parentdef_ = None):
       'Verify' in dumps or 'AppParam' in dumps or
      'DynamicArray' in dumps or 'maybe' in asn.target.dumps()):
     return
+
+  for cls in classnames:
+    if cls in dumps:
+      return
+
+  if 'self' in asn.target.dumps():
+    stat('Found self:\n')
+    stat(asn.dumps())
 
   if parentdef_ is None:
     parentdef = asn.parent_find('def')
@@ -262,7 +271,7 @@ def assigns(asn, parentdef_ = None):
     if hasattr(parval, 'filtered'):
       parval = parval.filtered()[0]
   except:
-    status(asn.target.value+' ' + 'break assign')
+    stat(asn.target.value+' ' + 'break assign')
     pass
     return
   if hasattr(parval, 'type'):  
@@ -279,16 +288,27 @@ def assigns(asn, parentdef_ = None):
       typ = 'TealType.bytes'
     else:
       typ = 'TealType.uint64'
-    makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
+    stat("About to make scratch")
+    if hasattr(asn.target.value, 'dumps'):
+      makescratch = f"{asn.target.value.dumps()} = ScratchVar({typ})\n"
+    else:
+      makescratch = f"{asn.target.value} = ScratchVar({typ})\n"
+    stat("A")
+    stat("makescratch is "+makescratch)
     #asn.insert_before(makescratch)
     parentdef.insert(0,makescratch)
-    
+    stat("B")
     if not parentdef.name in scratches_added:
       scratches_added[parentdef.name] = {}    
       
     scratches_added[parentdef.name][asn.target.value] = True
-    
-  asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
+  stat("C")
+  if hasattr(asn.target.value, 'dumps'):  
+    asn.replace(f"{asn.target.value.dumps()}.store({asn.value.dumps()})")
+  else:
+    asn.replace(f"{asn.target.value}.store({asn.value.dumps()})")
+
+  stat("D")
 
 def calls(nd):
   #all(nd.value)
@@ -499,6 +519,7 @@ def isSigDef(nd):
   return False
 
 def stat(s):
+  #sys.stderr.write('.')
   sys.stderr.write(s)
   sys.stderr.write("\n")
   #sys.stderr.write('▂')
@@ -709,6 +730,74 @@ def procdefs(source):
 
 isabi = False
 
+def fixClassIndents(source):
+  lines = source.split('\n')
+  out = ''
+  for line in lines:
+    if line.startswith('class'):
+      out += line + '\n'
+      continue
+
+    if line.startswith('def'):
+      out += '  ' + line + '\n'
+      continue
+   
+    if line.startswith('    '):
+      out += line + '\n'
+      continue
+
+    if line.startswith('  '):
+      out += '  ' + line + '\n'
+      continue
+   
+    out += '  ' + line + '\n'
+    continue
+
+  return out
+           
+
+classnames = []
+
+def classes(red):
+  stat('Top of classes function')
+  #nodes = red.find_all(['class'], recursive=False)
+  
+  outputx = ''
+  output = ''
+  foundclass = False
+  for nd in red: #nodes
+    if nd.type == 'class':
+      foundclass = True
+    if not foundclass:
+      output += nd.dumps()
+      continue
+    if foundclass and nd.type != 'class':
+      outputx += nd.dumps()
+      continue
+    stat('Processing class '+nd.name)
+    classout = ''
+    classnames.append(nd.name)
+    nd.value.decrease_indentation(2)
+    source = nd.value.dumps()
+    chunks = sections(source)
+    for src in chunks:
+      try:
+        newsrc = procdefs(src)
+        classout +=  newsrc #.replace('\n', '\n  ')
+        classout += '\n'
+      except BaseException as err:
+        sys.stderr.write('procdef error')
+        sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
+        sys.stderr.write(traceback.format_exc())              
+        pass
+    classout = f"class {nd.name}:{classout}\n"
+    classout = fixClassIndents(classout)
+
+    #.replace('\n  ','\n    ')
+    output += classout
+
+  return output, outputx
+
 def sections(source):
   groups = []
   lines = source.split('\n')
@@ -756,10 +845,20 @@ def convert(fname):
     stat('Application')
   progroot = red
 
-  source = red.dumps()
-  chunks = sections(source)
+  output = ''  
 
-  output = ''
+  outputx, afterclass = classes(red)
+  output += outputx
+
+  source = afterclass
+
+  #for nd in red:
+  #  if nd.type == 'class':     
+  #    nd.replace('\n') 
+
+  #source = red.dumps()
+
+  chunks = sections(source)
   
   for src in chunks:
     try:
