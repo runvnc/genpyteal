@@ -796,6 +796,9 @@ def classes(red):
     #.replace('\n  ','\n    ')
     output += classout
 
+  if outputx == '':
+    outputx = output
+    output = ''
   return output, outputx
 
 def sections(source):
@@ -850,6 +853,7 @@ def convert(fname):
   outputx, afterclass = classes(red)
   output += outputx
 
+  stat('afterclass = '+afterclass)
   source = afterclass
 
   #for nd in red:
