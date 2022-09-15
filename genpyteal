@@ -57,11 +57,14 @@ def getScratch(red):
   s2 = red.find_all('name')
   #if isinstance(s2, list):
   s2 = s2.filter(lambda x: x.dumps() == 'maybe' or 'asset_bal' in x.dumps())
+ 
+  s2_ = red.find_all('global')
   #else:
   #  sys.stderr.write('not filtering s2')
-  if s or s2:
+  if s or s2 or s2_:
     s3 = []
-    if s: s3 = s
+    if s2_: s3 = s2_
+    if s: s3 = s3 + s
     if s2: 
       s3 = s3 + s2
     return '\n'.join(s3.map(lambda x: x.dumps()))
@@ -855,6 +858,8 @@ def convert(fname):
 
   stat('afterclass = '+afterclass)
   source = afterclass
+  if source == '':
+    source = outputx
 
   #for nd in red:
   #  if nd.type == 'class':     
