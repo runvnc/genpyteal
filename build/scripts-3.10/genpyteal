@@ -793,7 +793,14 @@ def classes(red):
         sys.stderr.write(f"Unexpected {err=}, {type(err)=}")  
         sys.stderr.write(traceback.format_exc())              
         pass
-    classout = f"class {nd.name}:{classout}\n"
+
+    parentclass = nd.inherit_from.dumps()
+ 
+    if parentclass != '':
+      classout = f"class {nd.name}({parentclass}):{classout}\n"
+    else: 
+      classout = f"class {nd.name}:{classout}\n"
+
     classout = fixClassIndents(classout)
 
     #.replace('\n  ','\n    ')
