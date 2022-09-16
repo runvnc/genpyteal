@@ -107,6 +107,7 @@ def add_root_scratches(red):
     
 def findmap(red, which, how, def_=None):
   l = red.find_all(which)
+  l = l.filter(lambda x: x != red)
   if True or def_ is None:
     l.map(how)
   else:
@@ -148,8 +149,10 @@ def all(red, x = ''):
       findmap(red, 'string', strings)
       stat('ifelseblock..')
       findmap(red, 'ifelseblock', ifs)
-      if red.type != 'while':      
-        findmap(red, 'while', whiles)
+      findmap(red, 'while', whiles)
+ 
+      #if red.type != 'while':      
+      #  findmap(red, 'while', whiles)
       findmap(red, 'call', calls)
       findmap(red, 'name', names)
     strs_ = []
@@ -408,8 +411,13 @@ def names(nd):
     pass
 
 def whiles(w):
+  stat('whiles top\n')
+  #stat(w.help())
+  #stat('\n')
   all(w)
+  stat('whiles 5\n')
   w.replace(f"While( {w.test.dumps()}).Do(\n{w.value.dumps()} )")
+  stat('whiles done\n')
   
 def ifs(if_):
   all(if_.value[0], 'if')
